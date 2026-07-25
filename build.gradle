@@ -1,0 +1,81 @@
+plugins {
+    id 'org.springframework.boot' version '3.2.4'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'java'
+    id 'jacoco'
+    id 'org.sonarqube' version '4.4.1.3373'
+}
+
+group = 'com.pragma.powerup'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '21'
+
+configurations { compileOnly { extendsFrom annotationProcessor } }
+repositories { mavenCentral() }
+
+ext {
+    mapstructVersion = '1.5.5.Final'
+    lombokVersion = '1.18.30'
+    lombokMapstructBindingVersion = '0.2.0'
+    openApiVersion = '2.5.0'
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.flywaydb:flyway-core'
+    runtimeOnly 'org.postgresql:postgresql'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:${lombokMapstructBindingVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${openApiVersion}"
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'com.h2database:h2'
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty 'file.encoding', 'UTF-8'
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    classDirectories.setFrom(files(classDirectories.files.collect {
+        fileTree(dir: it, exclude: coverageExclusions())
+    }))
+    reports { xml.required = true; html.required = true }
+}
+
+jacocoTestCoverageVerification {
+    dependsOn test
+    classDirectories.setFrom(files(classDirectories.files.collect {
+        fileTree(dir: it, exclude: coverageExclusions())
+    }))
+    violationRules { rule { limit { minimum = 0.80 } } }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+
+sonar {
+    properties {
+        property 'sonar.projectKey', 'ms-foodcourt'
+        property 'sonar.projectName', 'ms-foodcourt'
+        property 'sonar.host.url', 'http://localhost:9000'
+        property 'sonar.coverage.jacoco.xmlReportPaths', "${project.layout.buildDirectory.get()}/reports/jacoco/test/jacocoTestReport.xml"
+        property 'sonar.exclusions', '**/configuration/**, **/documentation/**, **/entity/**, **/mapper/**, **/dto/**, **/model/**, **/exception/**, **/*Application.java'
+    }
+}
+
+def coverageExclusions() {
+    [
+        '**/configuration/**', '**/documentation/**', '**/entity/**', '**/mapper/**',
+        '**/dto/**', '**/model/**', '**/exception/**', '**/*Application.class'
+    ]
+}
