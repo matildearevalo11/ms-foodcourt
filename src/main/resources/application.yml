@@ -11,11 +11,13 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     open-in-view: false
     show-sql: ${JPA_SHOW_SQL:false}
-  flyway:
-    enabled: true
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
 
 clients:
   users:

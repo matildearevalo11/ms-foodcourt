@@ -32,4 +32,12 @@ class RestaurantJpaAdapterTest {
         when(repository.existsByNit("123")).thenReturn(true);
         assertTrue(adapter.existsByNit("123"));
     }
+
+    @Test
+    void existsById_ShouldDelegate() {
+        IRestaurantRepository repository = mock(IRestaurantRepository.class);
+        RestaurantJpaAdapter adapter = new RestaurantJpaAdapter(repository, mock(IRestaurantEntityMapper.class));
+        when(repository.existsById(5L)).thenReturn(true);
+        assertTrue(adapter.existsById(5L));
+    }
 }

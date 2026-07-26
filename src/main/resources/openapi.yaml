@@ -26,6 +26,28 @@ paths:
                 $ref: '#/components/schemas/RestaurantResponseEnvelope'
         '400': { description: Invalid fields, duplicated NIT or owner without OWNER role }
         '503': { description: User service unavailable }
+  /restaurants/{restaurantId}/dishes:
+    post:
+      tags: [dishes]
+      summary: Create a dish for a restaurant
+      operationId: createDish
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DishRequest' }
+      responses:
+        '201':
+          description: Dish created and enabled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DishResponseEnvelope' }
+        '400': { description: Invalid fields, restaurant or category }
 components:
   schemas:
     RestaurantRequest:
@@ -58,3 +80,24 @@ components:
       type: object
       properties:
         data: { $ref: '#/components/schemas/RestaurantResponse' }
+    DishRequest:
+      type: object
+      required: [name, price, description, urlImage, categoryId]
+      properties:
+        name: { type: string, example: Hamburguesa especial }
+        price: { type: integer, format: int64, minimum: 1, example: 25000 }
+        description: { type: string, example: Carne, queso y vegetales }
+        urlImage: { type: string, example: 'https://cdn.example.com/dish.png' }
+        categoryId: { type: integer, format: int64, minimum: 1, example: 2 }
+    DishResponse:
+      allOf:
+        - $ref: '#/components/schemas/DishRequest'
+        - type: object
+          properties:
+            id: { type: integer, format: int64 }
+            restaurantId: { type: integer, format: int64 }
+            active: { type: boolean, example: true }
+    DishResponseEnvelope:
+      type: object
+      properties:
+        data: { $ref: '#/components/schemas/DishResponse' }

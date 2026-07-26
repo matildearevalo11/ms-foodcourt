@@ -7,13 +7,13 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Restaurant {
+public class Dish {
     private Long id;
     private String name;
-    private String nit;
-    private String address;
-    private String phone;
-    private String urlLogo;
-    private Long ownerId;
-
+    private Long price;
+    private String description;
+    private String urlImage;
+    private Long categoryId;
+    private Long restaurantId;
+    private boolean active;
 }

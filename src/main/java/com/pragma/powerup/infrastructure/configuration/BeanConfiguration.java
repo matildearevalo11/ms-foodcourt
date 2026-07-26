@@ -1,11 +1,18 @@
 package com.pragma.powerup.infrastructure.configuration;
 
+import com.pragma.powerup.domain.api.IDishServicePort;
 import com.pragma.powerup.domain.api.IRestaurantServicePort;
+import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import com.pragma.powerup.domain.usecase.DishUseCase;
 import com.pragma.powerup.domain.usecase.RestaurantUseCase;
+import com.pragma.powerup.infrastructure.out.jpa.adapter.DishJpaAdapter;
 import com.pragma.powerup.infrastructure.out.jpa.adapter.RestaurantJpaAdapter;
+import com.pragma.powerup.infrastructure.out.jpa.mapper.IDishEntityMapper;
 import com.pragma.powerup.infrastructure.out.jpa.mapper.IRestaurantEntityMapper;
+import com.pragma.powerup.infrastructure.out.jpa.repository.ICategoryRepository;
+import com.pragma.powerup.infrastructure.out.jpa.repository.IDishRepository;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IRestaurantRepository;
 import com.pragma.powerup.infrastructure.out.rest.adapter.UserServiceRestAdapter;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,6 +43,18 @@ public class BeanConfiguration {
     public IRestaurantServicePort restaurantServicePort(
             IRestaurantPersistencePort persistencePort, IOwnerValidationPort ownerValidationPort) {
         return new RestaurantUseCase(persistencePort, ownerValidationPort);
+    }
+
+    @Bean
+    public IDishPersistencePort dishPersistencePort(IDishRepository dishRepository, ICategoryRepository categoryRepository,
+                                                     IDishEntityMapper mapper) {
+        return new DishJpaAdapter(dishRepository, categoryRepository, mapper);
+    }
+
+    @Bean
+    public IDishServicePort dishServicePort(IDishPersistencePort dishPersistencePort,
+                                             IRestaurantPersistencePort restaurantPersistencePort) {
+        return new DishUseCase(dishPersistencePort, restaurantPersistencePort);
     }
 
 }
