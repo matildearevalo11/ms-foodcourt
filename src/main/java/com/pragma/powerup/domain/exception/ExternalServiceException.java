@@ -1,5 +1,7 @@
 package com.pragma.powerup.domain.exception;
 
+import lombok.experimental.StandardException;
+
+@StandardException
 public class ExternalServiceException extends DomainException {
-    public ExternalServiceException(String message) { super(message); }
 }

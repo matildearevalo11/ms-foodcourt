@@ -1,7 +1,7 @@
 package com.pragma.powerup.domain.exception;
 
+import lombok.experimental.StandardException;
+
+@StandardException
 public class NotFoundException extends DomainException {
-    public NotFoundException(String message) {
-        super(message);
-    }
 }

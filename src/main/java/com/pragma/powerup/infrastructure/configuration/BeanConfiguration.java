@@ -3,6 +3,7 @@ package com.pragma.powerup.infrastructure.configuration;
 import com.pragma.powerup.domain.api.IDishServicePort;
 import com.pragma.powerup.domain.api.IRestaurantServicePort;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
+import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.usecase.DishUseCase;
@@ -18,6 +19,8 @@ import com.pragma.powerup.infrastructure.out.rest.adapter.UserServiceRestAdapter
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.client.RestClient;
 
 @Configuration
@@ -31,7 +34,15 @@ public class BeanConfiguration {
     @Bean
     public RestClient usersRestClient(RestClient.Builder builder,
                                       @Value("${clients.users.base-url}") String baseUrl) {
-        return builder.baseUrl(baseUrl).build();
+        return builder.baseUrl(baseUrl)
+                .requestInterceptor((request, body, execution) -> {
+                    if (SecurityContextHolder.getContext().getAuthentication() != null
+                            && SecurityContextHolder.getContext().getAuthentication().getPrincipal() instanceof Jwt jwt) {
+                        request.getHeaders().setBearerAuth(jwt.getTokenValue());
+                    }
+                    return execution.execute(request, body);
+                })
+                .build();
     }
 
     @Bean
@@ -53,8 +64,9 @@ public class BeanConfiguration {
 
     @Bean
     public IDishServicePort dishServicePort(IDishPersistencePort dishPersistencePort,
-                                             IRestaurantPersistencePort restaurantPersistencePort) {
-        return new DishUseCase(dishPersistencePort, restaurantPersistencePort);
+                                             IRestaurantPersistencePort restaurantPersistencePort,
+                                             ILoggedUserPort loggedUserPort) {
+        return new DishUseCase(dishPersistencePort, restaurantPersistencePort, loggedUserPort);
     }
 
 }

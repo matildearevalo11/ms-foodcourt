@@ -3,6 +3,8 @@ package com.pragma.powerup.infrastructure.input.rest;
 import com.pragma.powerup.application.dto.request.RestaurantRequestDto;
 import com.pragma.powerup.application.dto.response.RestaurantResponseDto;
 import com.pragma.powerup.application.handler.IRestaurantHandler;
+import com.pragma.powerup.domain.enums.RoleEnum;
+import com.pragma.powerup.infrastructure.security.RequireRole;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ public class RestaurantRestController {
     private final IRestaurantHandler restaurantHandler;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.ADMIN)
     @ResponseStatus(HttpStatus.CREATED)
     public DefaultResponse<RestaurantResponseDto> createRestaurant(
             @Valid @RequestBody RestaurantRequestDto requestDto) {

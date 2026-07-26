@@ -21,8 +21,7 @@ public class DishHandler implements IDishHandler {
 
     @Override
     public DishResponseDto saveDish(Long restaurantId, DishRequestDto requestDto) {
-        return responseMapper.toResponse(
-                dishServicePort.saveDish(requestMapper.toDish(requestDto, restaurantId)));
+        return responseMapper.toResponse(dishServicePort.saveDish(requestMapper.toDish(requestDto, restaurantId)));
     }
 
     @Override

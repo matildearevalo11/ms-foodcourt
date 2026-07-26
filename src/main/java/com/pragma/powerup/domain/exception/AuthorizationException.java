@@ -3,5 +3,5 @@ package com.pragma.powerup.domain.exception;
 import lombok.experimental.StandardException;
 
 @StandardException
-public class ValidationException extends DomainException {
+public class AuthorizationException extends DomainException {
 }

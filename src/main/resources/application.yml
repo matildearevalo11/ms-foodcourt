@@ -24,6 +24,9 @@ clients:
   users:
     base-url: ${USERS_SERVICE_URL:http://localhost:8081/api/v1}
 
+jwt:
+  secret: ${JWT_SECRET:2b31c76f74d6be0c35ec182a3c5bcd1c86de81b29df586ab82f28cd92ca11da4}
+
 springdoc:
   swagger-ui:
     url: /openapi.yaml

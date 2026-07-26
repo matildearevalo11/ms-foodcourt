@@ -6,19 +6,16 @@ import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Restaurant;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import lombok.RequiredArgsConstructor;
 
 import java.util.regex.Pattern;
 
+@RequiredArgsConstructor
 public class RestaurantUseCase implements IRestaurantServicePort {
     private static final Pattern NUMERIC = Pattern.compile("\\d+");
     private static final Pattern PHONE = Pattern.compile("\\+?\\d{1,13}");
     private final IRestaurantPersistencePort persistencePort;
     private final IOwnerValidationPort ownerValidationPort;
-
-    public RestaurantUseCase(IRestaurantPersistencePort persistencePort, IOwnerValidationPort ownerValidationPort) {
-        this.persistencePort = persistencePort;
-        this.ownerValidationPort = ownerValidationPort;
-    }
 
     @Override
     public Restaurant saveRestaurant(Restaurant restaurant) {

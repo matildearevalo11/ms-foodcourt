@@ -1,5 +1,10 @@
 package com.pragma.powerup.domain.exception;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
 public enum ExceptionMessages {
     RESTAURANT_NAME_NUMERIC("Restaurant name cannot contain only numbers"),
     INVALID_NIT("NIT must contain only numbers"),
@@ -10,14 +15,10 @@ public enum ExceptionMessages {
     RESTAURANT_NOT_FOUND("Restaurant does not exist"),
     CATEGORY_NOT_FOUND("Category does not exist"),
     INVALID_DISH_PRICE("Dish price must be a positive integer greater than zero"),
-    DISH_NOT_FOUND("Dish does not exist");
+    DISH_NOT_FOUND("Dish does not exist"),
+    RESTAURANT_OWNER_REQUIRED("Only the restaurant owner can manage its dishes"),
+
+    ;
 
     private final String message;
-    ExceptionMessages(String message) {
-        this.message = message;
-    }
-
-    public String getMessage() {
-        return message;
-    }
 }

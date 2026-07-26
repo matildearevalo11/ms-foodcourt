@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import java.util.Optional;
 
 class RestaurantJpaAdapterTest {
     @Test
@@ -39,5 +40,18 @@ class RestaurantJpaAdapterTest {
         RestaurantJpaAdapter adapter = new RestaurantJpaAdapter(repository, mock(IRestaurantEntityMapper.class));
         when(repository.existsById(5L)).thenReturn(true);
         assertTrue(adapter.existsById(5L));
+    }
+
+    @Test
+    void findById_WhenRestaurantExists_ShouldMapRestaurant() {
+        IRestaurantRepository repository = mock(IRestaurantRepository.class);
+        IRestaurantEntityMapper mapper = mock(IRestaurantEntityMapper.class);
+        RestaurantJpaAdapter adapter = new RestaurantJpaAdapter(repository, mapper);
+        RestaurantEntity entity = new RestaurantEntity();
+        Restaurant restaurant = new Restaurant();
+        when(repository.findById(5L)).thenReturn(Optional.of(entity));
+        when(mapper.toRestaurant(entity)).thenReturn(restaurant);
+
+        assertEquals(Optional.of(restaurant), adapter.findById(5L));
     }
 }

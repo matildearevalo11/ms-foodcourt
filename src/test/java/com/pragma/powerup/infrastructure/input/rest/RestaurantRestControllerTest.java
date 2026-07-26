@@ -12,13 +12,18 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.context.annotation.Import;
+import com.pragma.powerup.infrastructure.configuration.SecurityConfiguration;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 @WebMvcTest(RestaurantRestController.class)
+@Import(SecurityConfiguration.class)
 class RestaurantRestControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
@@ -32,7 +37,7 @@ class RestaurantRestControllerTest {
         response.setName(request.getName());
         when(handler.saveRestaurant(any())).thenReturn(response);
 
-        mockMvc.perform(post("/restaurants").contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post("/restaurants").with(adminJwt()).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.id").value(1))
@@ -41,7 +46,8 @@ class RestaurantRestControllerTest {
 
     @Test
     void createRestaurant_WithMissingFields_ShouldReturnBadRequest() throws Exception {
-        mockMvc.perform(post("/restaurants").contentType(MediaType.APPLICATION_JSON).content("{}"))
+        mockMvc.perform(post("/restaurants").with(adminJwt())
+                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.name").value("Name is required"));
     }
@@ -91,14 +97,30 @@ class RestaurantRestControllerTest {
         performStatus(validRequest(), 500, "An unexpected error occurred");
     }
 
-    private void performBadRequest(RestaurantRequestDto request, String field, String message) throws Exception {
+    @Test
+    void createRestaurant_WithoutAuthentication_ShouldReturnUnauthorized() throws Exception {
         mockMvc.perform(post("/restaurants").contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest())))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void createRestaurant_AsOwner_ShouldReturnForbidden() throws Exception {
+        mockMvc.perform(post("/restaurants")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_OWNER")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest())))
+                .andExpect(status().isForbidden());
+    }
+
+    private void performBadRequest(RestaurantRequestDto request, String field, String message) throws Exception {
+        mockMvc.perform(post("/restaurants").with(adminJwt()).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors." + field).value(message));
     }
 
     private void performStatus(RestaurantRequestDto request, int status, String message) throws Exception {
-        mockMvc.perform(post("/restaurants").contentType(MediaType.APPLICATION_JSON)
+        mockMvc.perform(post("/restaurants").with(adminJwt()).contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().is(status)).andExpect(jsonPath("$.errors.message").value(message));
     }
@@ -112,5 +134,10 @@ class RestaurantRestControllerTest {
         request.setUrlLogo("https://cdn.example.com/logo.png");
         request.setOwnerId(7L);
         return request;
+    }
+
+    private org.springframework.test.web.servlet.request.RequestPostProcessor adminJwt() {
+        return jwt().jwt(token -> token.subject("1"))
+                .authorities(new SimpleGrantedAuthority("ROLE_ADMIN"));
     }
 }

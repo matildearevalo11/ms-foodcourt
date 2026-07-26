@@ -11,14 +11,19 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.context.annotation.Import;
+import com.pragma.powerup.infrastructure.configuration.SecurityConfiguration;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 @WebMvcTest(DishRestController.class)
+@Import(SecurityConfiguration.class)
 class DishRestControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
@@ -35,6 +40,7 @@ class DishRestControllerTest {
         when(handler.saveDish(eq(5L), any())).thenReturn(response);
 
         mockMvc.perform(post("/restaurants/5/dishes")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -45,6 +51,7 @@ class DishRestControllerTest {
     @Test
     void createDish_WithMissingFields_ShouldReturnBadRequest() throws Exception {
         mockMvc.perform(post("/restaurants/5/dishes")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON).content("{}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.name").value("Dish name is required"))
@@ -56,6 +63,7 @@ class DishRestControllerTest {
         DishRequestDto request = validRequest();
         request.setPrice(0L);
         mockMvc.perform(post("/restaurants/5/dishes")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -72,6 +80,7 @@ class DishRestControllerTest {
         when(handler.updateDish(eq(5L), eq(10L), any())).thenReturn(response);
 
         mockMvc.perform(patch("/restaurants/5/dishes/10")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -88,6 +97,7 @@ class DishRestControllerTest {
         when(handler.updateDish(eq(5L), eq(10L), any())).thenReturn(response);
 
         mockMvc.perform(patch("/restaurants/5/dishes/10")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"price\":30000,\"description\":\"Nueva descripción\",\"name\":\"No permitido\"}"))
                 .andExpect(status().isOk());
@@ -96,11 +106,29 @@ class DishRestControllerTest {
     @Test
     void updateDish_WithInvalidFields_ShouldReturnBadRequest() throws Exception {
         mockMvc.perform(patch("/restaurants/5/dishes/10")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"price\":0,\"description\":\"\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.price").value("Dish price must be greater than zero"))
                 .andExpect(jsonPath("$.errors.description").value("Description is required"));
+    }
+
+    @Test
+    void createDish_WithoutAuthentication_ShouldReturnUnauthorized() throws Exception {
+        mockMvc.perform(post("/restaurants/5/dishes").contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest())))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void createDish_AsEmployee_ShouldReturnForbidden() throws Exception {
+        mockMvc.perform(post("/restaurants/5/dishes")
+                        .with(jwt().jwt(token -> token.subject("12"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_EMPLOYEE")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest())))
+                .andExpect(status().isForbidden());
     }
 
     private DishRequestDto validRequest() {
@@ -118,5 +146,10 @@ class DishRestControllerTest {
         request.setPrice(30000L);
         request.setDescription("Nueva descripción");
         return request;
+    }
+
+    private org.springframework.test.web.servlet.request.RequestPostProcessor ownerJwt() {
+        return jwt().jwt(token -> token.subject("7"))
+                .authorities(new SimpleGrantedAuthority("ROLE_OWNER"));
     }
 }

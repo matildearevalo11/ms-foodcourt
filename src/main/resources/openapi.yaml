@@ -5,6 +5,8 @@ info:
   version: 1.0.0
 servers:
   - url: /api/v1
+security:
+  - bearerAuth: []
 paths:
   /restaurants:
     post:
@@ -76,6 +78,11 @@ paths:
         '400': { description: Invalid price or description }
         '404': { description: Dish does not exist in the restaurant }
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     RestaurantRequest:
       type: object
