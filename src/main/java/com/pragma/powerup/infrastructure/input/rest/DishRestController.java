@@ -1,6 +1,7 @@
 package com.pragma.powerup.infrastructure.input.rest;
 
 import com.pragma.powerup.application.dto.request.DishRequestDto;
+import com.pragma.powerup.application.dto.request.DishUpdateRequestDto;
 import com.pragma.powerup.application.dto.response.DishResponseDto;
 import com.pragma.powerup.application.handler.IDishHandler;
 import jakarta.validation.Valid;
@@ -17,8 +18,14 @@ public class DishRestController {
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public DefaultResponse<DishResponseDto> createDish(@PathVariable Long restaurantId,
-                                                       @Valid @RequestBody DishRequestDto requestDto) {
+    public DefaultResponse<DishResponseDto> createDish(@PathVariable Long restaurantId, @Valid @RequestBody DishRequestDto requestDto) {
         return new DefaultResponse<>(dishHandler.saveDish(restaurantId, requestDto));
+    }
+
+    @PatchMapping(value = "/{dishId}", consumes = MediaType.APPLICATION_JSON_VALUE,
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public DefaultResponse<DishResponseDto> updateDish(@PathVariable Long restaurantId, @PathVariable Long dishId,
+                                                       @Valid @RequestBody DishUpdateRequestDto requestDto) {
+        return new DefaultResponse<>(dishHandler.updateDish(restaurantId, dishId, requestDto));
     }
 }

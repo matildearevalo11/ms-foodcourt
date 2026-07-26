@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import java.util.Optional;
 
 class DishJpaAdapterTest {
     @Test
@@ -33,5 +34,27 @@ class DishJpaAdapterTest {
                 mock(IDishEntityMapper.class));
         when(categories.existsById(2L)).thenReturn(true);
         assertTrue(adapter.categoryExistsById(2L));
+    }
+
+    @Test
+    void findById_WhenDishExists_ShouldMapDish() {
+        IDishRepository repository = mock(IDishRepository.class);
+        IDishEntityMapper mapper = mock(IDishEntityMapper.class);
+        DishJpaAdapter adapter = new DishJpaAdapter(repository, mock(ICategoryRepository.class), mapper);
+        DishEntity entity = new DishEntity();
+        Dish dish = new Dish();
+        when(repository.findById(10L)).thenReturn(Optional.of(entity));
+        when(mapper.toDish(entity)).thenReturn(dish);
+
+        assertEquals(Optional.of(dish), adapter.findById(10L));
+    }
+
+    @Test
+    void findById_WhenDishDoesNotExist_ShouldReturnEmpty() {
+        IDishRepository repository = mock(IDishRepository.class);
+        DishJpaAdapter adapter = new DishJpaAdapter(repository, mock(ICategoryRepository.class),
+                mock(IDishEntityMapper.class));
+        when(repository.findById(99L)).thenReturn(Optional.empty());
+        assertTrue(adapter.findById(99L).isEmpty());
     }
 }

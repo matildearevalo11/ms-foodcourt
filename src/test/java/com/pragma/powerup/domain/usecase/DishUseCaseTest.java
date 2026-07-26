@@ -1,6 +1,7 @@
 package com.pragma.powerup.domain.usecase;
 
 import com.pragma.powerup.domain.exception.ValidationException;
+import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.model.Dish;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import java.util.Optional;
 
 class DishUseCaseTest {
     private IDishPersistencePort dishPersistencePort;
@@ -62,6 +64,44 @@ class DishUseCaseTest {
         Dish dish = validDish();
         when(restaurantPersistencePort.existsById(5L)).thenReturn(true);
         assertThrows(ValidationException.class, () -> useCase.saveDish(dish));
+        verify(dishPersistencePort, never()).saveDish(any());
+    }
+
+    @Test
+    void updateDish_WithValidData_ShouldOnlyUpdatePriceAndDescription() {
+        Dish dish = validDish();
+        when(dishPersistencePort.findById(10L)).thenReturn(Optional.of(dish));
+        when(dishPersistencePort.saveDish(dish)).thenReturn(dish);
+
+        Dish result = useCase.updateDish(5L, 10L, 30000L, "Nueva descripción");
+
+        assertEquals(30000L, result.getPrice());
+        assertEquals("Nueva descripción", result.getDescription());
+        assertEquals("Hamburguesa", result.getName());
+        assertEquals(2L, result.getCategoryId());
+        verify(dishPersistencePort).saveDish(dish);
+    }
+
+    @Test
+    void updateDish_WithInvalidPrice_ShouldFailBeforeLookup() {
+        assertThrows(ValidationException.class,
+                () -> useCase.updateDish(5L, 10L, 0L, "Descripción"));
+        verifyNoInteractions(dishPersistencePort);
+    }
+
+    @Test
+    void updateDish_WhenDishDoesNotExist_ShouldThrowNotFoundException() {
+        when(dishPersistencePort.findById(99L)).thenReturn(Optional.empty());
+        assertThrows(NotFoundException.class,
+                () -> useCase.updateDish(5L, 99L, 30000L, "Descripción"));
+    }
+
+    @Test
+    void updateDish_WhenDishBelongsToAnotherRestaurant_ShouldThrowNotFoundException() {
+        Dish dish = validDish();
+        when(dishPersistencePort.findById(10L)).thenReturn(Optional.of(dish));
+        assertThrows(NotFoundException.class,
+                () -> useCase.updateDish(8L, 10L, 30000L, "Descripción"));
         verify(dishPersistencePort, never()).saveDish(any());
     }
 

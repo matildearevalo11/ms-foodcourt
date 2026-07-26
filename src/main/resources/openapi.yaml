@@ -48,6 +48,33 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/DishResponseEnvelope' }
         '400': { description: Invalid fields, restaurant or category }
+  /restaurants/{restaurantId}/dishes/{dishId}:
+    patch:
+      tags: [dishes]
+      summary: Update a dish's price and description
+      operationId: updateDish
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+        - in: path
+          name: dishId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DishUpdateRequest' }
+      responses:
+        '200':
+          description: Dish updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DishResponseEnvelope' }
+        '400': { description: Invalid price or description }
+        '404': { description: Dish does not exist in the restaurant }
 components:
   schemas:
     RestaurantRequest:
@@ -97,6 +124,12 @@ components:
             id: { type: integer, format: int64 }
             restaurantId: { type: integer, format: int64 }
             active: { type: boolean, example: true }
+    DishUpdateRequest:
+      type: object
+      required: [price, description]
+      properties:
+        price: { type: integer, format: int64, minimum: 1, example: 30000 }
+        description: { type: string, example: Nueva descripción del plato }
     DishResponseEnvelope:
       type: object
       properties:

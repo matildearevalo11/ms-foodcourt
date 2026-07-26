@@ -18,6 +18,7 @@ spring:
   sql:
     init:
       mode: always
+      data-locations: classpath:db/sql/data.sql
 
 clients:
   users:

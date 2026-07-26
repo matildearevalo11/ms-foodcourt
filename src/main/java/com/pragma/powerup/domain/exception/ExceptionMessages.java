@@ -9,7 +9,8 @@ public enum ExceptionMessages {
     USERS_SERVICE_UNAVAILABLE("User service is unavailable"),
     RESTAURANT_NOT_FOUND("Restaurant does not exist"),
     CATEGORY_NOT_FOUND("Category does not exist"),
-    INVALID_DISH_PRICE("Dish price must be a positive integer greater than zero");
+    INVALID_DISH_PRICE("Dish price must be a positive integer greater than zero"),
+    DISH_NOT_FOUND("Dish does not exist");
 
     private final String message;
     ExceptionMessages(String message) {
