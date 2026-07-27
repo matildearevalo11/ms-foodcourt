@@ -77,6 +77,35 @@ paths:
               schema: { $ref: '#/components/schemas/DishResponseEnvelope' }
         '400': { description: Invalid price or description }
         '404': { description: Dish does not exist in the restaurant }
+  /restaurants/{restaurantId}/dishes/{dishId}/status:
+    patch:
+      tags: [dishes]
+      summary: Enable or disable a dish
+      operationId: updateDishStatus
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+        - in: path
+          name: dishId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DishStatusRequest' }
+      responses:
+        '200':
+          description: Dish status updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DishResponseEnvelope' }
+        '400': { description: Status is required }
+        '401': { description: Authentication required }
+        '403': { description: Only the restaurant owner can update the dish }
+        '404': { description: Dish does not exist in the restaurant }
 components:
   securitySchemes:
     bearerAuth:
@@ -137,6 +166,11 @@ components:
       properties:
         price: { type: integer, format: int64, minimum: 1, example: 30000 }
         description: { type: string, example: Nueva descripción del plato }
+    DishStatusRequest:
+      type: object
+      required: [active]
+      properties:
+        active: { type: boolean, example: false }
     DishResponseEnvelope:
       type: object
       properties:

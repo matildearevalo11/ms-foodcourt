@@ -131,6 +131,31 @@ class DishRestControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void updateDishStatus_WithValidRequest_ShouldReturnUpdatedStatus() throws Exception {
+        DishResponseDto response = new DishResponseDto();
+        response.setId(10L);
+        response.setActive(false);
+        when(handler.updateDishStatus(eq(5L), eq(10L), any())).thenReturn(response);
+
+        mockMvc.perform(patch("/restaurants/5/dishes/10/status")
+                        .with(ownerJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.active").value(false));
+    }
+
+    @Test
+    void updateDishStatus_WithoutStatus_ShouldReturnBadRequest() throws Exception {
+        mockMvc.perform(patch("/restaurants/5/dishes/10/status")
+                        .with(ownerJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.active").value("Dish status is required"));
+    }
+
     private DishRequestDto validRequest() {
         DishRequestDto request = new DishRequestDto();
         request.setName("Hamburguesa");

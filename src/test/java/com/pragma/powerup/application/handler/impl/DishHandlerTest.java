@@ -2,6 +2,7 @@ package com.pragma.powerup.application.handler.impl;
 
 import com.pragma.powerup.application.dto.request.DishRequestDto;
 import com.pragma.powerup.application.dto.request.DishUpdateRequestDto;
+import com.pragma.powerup.application.dto.request.DishStatusRequestDto;
 import com.pragma.powerup.application.dto.response.DishResponseDto;
 import com.pragma.powerup.application.mapper.IDishRequestMapper;
 import com.pragma.powerup.application.mapper.IDishResponseMapper;
@@ -45,5 +46,20 @@ class DishHandlerTest {
         when(responseMapper.toResponse(updated)).thenReturn(response);
 
         assertSame(response, handler.updateDish(5L, 10L, request));
+    }
+
+    @Test
+    void updateDishStatus_ShouldDelegateAndMapResponse() {
+        IDishServicePort service = mock(IDishServicePort.class);
+        IDishResponseMapper responseMapper = mock(IDishResponseMapper.class);
+        DishHandler handler = new DishHandler(service, mock(IDishRequestMapper.class), responseMapper);
+        DishStatusRequestDto request = new DishStatusRequestDto();
+        request.setActive(false);
+        Dish updated = new Dish();
+        DishResponseDto response = new DishResponseDto();
+        when(service.updateDishStatus(5L, 10L, false)).thenReturn(updated);
+        when(responseMapper.toResponse(updated)).thenReturn(response);
+
+        assertSame(response, handler.updateDishStatus(5L, 10L, request));
     }
 }

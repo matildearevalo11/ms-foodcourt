@@ -121,6 +121,39 @@ class DishUseCaseTest {
         verify(dishPersistencePort, never()).saveDish(any());
     }
 
+    @Test
+    void updateDishStatus_WhenOwnerOwnsRestaurant_ShouldPersistRequestedStatus() {
+        Dish dish = validDish();
+        dish.setActive(true);
+        ownerRestaurantExists();
+        when(dishPersistencePort.findById(10L)).thenReturn(Optional.of(dish));
+        when(dishPersistencePort.saveDish(dish)).thenReturn(dish);
+
+        Dish result = useCase.updateDishStatus(5L, 10L, false);
+
+        assertFalse(result.isActive());
+        verify(dishPersistencePort).saveDish(dish);
+    }
+
+    @Test
+    void updateDishStatus_WhenDishBelongsToAnotherRestaurant_ShouldFail() {
+        Dish dish = validDish();
+        dish.setRestaurantId(8L);
+        ownerRestaurantExists();
+        when(dishPersistencePort.findById(10L)).thenReturn(Optional.of(dish));
+
+        assertThrows(NotFoundException.class, () -> useCase.updateDishStatus(5L, 10L, false));
+    }
+
+    @Test
+    void updateDishStatus_WhenLoggedOwnerDoesNotOwnRestaurant_ShouldFail() {
+        ownerRestaurantExists();
+        when(loggedUserPort.getLoggedUserId()).thenReturn(9L);
+
+        assertThrows(AuthorizationException.class, () -> useCase.updateDishStatus(5L, 10L, false));
+        verify(dishPersistencePort, never()).saveDish(any());
+    }
+
     private void ownerRestaurantExists() {
         Restaurant restaurant = new Restaurant(5L, "Restaurante", "123", "Dirección",
                 "3001234567", "logo", 7L);

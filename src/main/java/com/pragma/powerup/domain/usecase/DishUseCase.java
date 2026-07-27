@@ -32,14 +32,16 @@ public class DishUseCase implements IDishServicePort {
     @Override
     public Dish updateDish(Long restaurantId, Long dishId, Long price, String description) {
         validatePrice(price);
-        validateRestaurantOwner(restaurantId);
-        Dish dish = dishPersistencePort.findById(dishId)
-                .orElseThrow(() -> new NotFoundException(ExceptionMessages.DISH_NOT_FOUND.getMessage()));
-        if (!restaurantId.equals(dish.getRestaurantId())) {
-            throw new NotFoundException(ExceptionMessages.DISH_NOT_FOUND.getMessage());
-        }
+        Dish dish = findOwnedDish(restaurantId, dishId);
         dish.setPrice(price);
         dish.setDescription(description);
+        return dishPersistencePort.saveDish(dish);
+    }
+
+    @Override
+    public Dish updateDishStatus(Long restaurantId, Long dishId, boolean active) {
+        Dish dish = findOwnedDish(restaurantId, dishId);
+        dish.setActive(active);
         return dishPersistencePort.saveDish(dish);
     }
 
@@ -55,5 +57,15 @@ public class DishUseCase implements IDishServicePort {
         if (!loggedUserPort.getLoggedUserId().equals(restaurant.getOwnerId())) {
             throw new AuthorizationException(ExceptionMessages.RESTAURANT_OWNER_REQUIRED.getMessage());
         }
+    }
+
+    private Dish findOwnedDish(Long restaurantId, Long dishId) {
+        validateRestaurantOwner(restaurantId);
+        Dish dish = dishPersistencePort.findById(dishId)
+                .orElseThrow(() -> new NotFoundException(ExceptionMessages.DISH_NOT_FOUND.getMessage()));
+        if (!restaurantId.equals(dish.getRestaurantId())) {
+            throw new NotFoundException(ExceptionMessages.DISH_NOT_FOUND.getMessage());
+        }
+        return dish;
     }
 }
