@@ -2,6 +2,7 @@ package com.pragma.powerup.domain.usecase;
 
 import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Restaurant;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import org.mockito.MockitoAnnotations;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
+import java.util.List;
 
 class RestaurantUseCaseTest {
     @Mock private IRestaurantPersistencePort persistencePort;
@@ -85,6 +87,14 @@ class RestaurantUseCaseTest {
         Restaurant restaurant = validRestaurant();
         restaurant.setPhone("+5730012345678");
         assertThrows(ValidationException.class, () -> useCase.saveRestaurant(restaurant));
+    }
+
+    @Test
+    void getRestaurants_ShouldDelegatePagination() {
+        PageResult<Restaurant> expected = new PageResult<>(List.of(validRestaurant()), 0, 5, 1, 1);
+        when(persistencePort.getAllByNameAsc(0, 5)).thenReturn(expected);
+
+        assertEquals(expected, useCase.getRestaurants(0, 5));
     }
 
     private Restaurant validRestaurant() {

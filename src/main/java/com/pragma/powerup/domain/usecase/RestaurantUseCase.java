@@ -4,6 +4,7 @@ import com.pragma.powerup.domain.api.IRestaurantServicePort;
 import com.pragma.powerup.domain.exception.ExceptionMessages;
 import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Restaurant;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,11 @@ public class RestaurantUseCase implements IRestaurantServicePort {
             throw new ValidationException(ExceptionMessages.OWNER_ROLE_REQUIRED.getMessage());
         }
         return persistencePort.saveRestaurant(restaurant);
+    }
+
+    @Override
+    public PageResult<Restaurant> getRestaurants(int page, int size) {
+        return persistencePort.findAllByNameAsc(page, size);
     }
 
     private void validateBusinessRules(Restaurant restaurant) {

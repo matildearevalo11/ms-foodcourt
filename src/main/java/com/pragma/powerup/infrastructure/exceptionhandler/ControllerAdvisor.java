@@ -13,6 +13,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import jakarta.validation.ConstraintViolationException;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -65,6 +66,11 @@ public class ControllerAdvisor {
         exception.getBindingResult().getAllErrors().forEach(error ->
                 fields.put(((FieldError) error).getField(), error.getDefaultMessage()));
         return ResponseEntity.badRequest().body(Collections.singletonMap(ERRORS, fields));
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, Object>> handleConstraintViolation(ConstraintViolationException exception) {
+        return error(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
     @ExceptionHandler(RuntimeException.class)

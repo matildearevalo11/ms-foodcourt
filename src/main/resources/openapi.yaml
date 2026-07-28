@@ -9,6 +9,26 @@ security:
   - bearerAuth: []
 paths:
   /restaurants:
+    get:
+      tags: [restaurants]
+      summary: Get restaurants alphabetically
+      operationId: getRestaurants
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 0, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+      responses:
+        '200':
+          description: Paginated restaurant summaries ordered by name
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RestaurantSummaryPage' }
+        '400': { description: Invalid pagination parameters }
+        '401': { description: Authentication required }
+        '403': { description: CUSTOMER role required }
     post:
       tags: [restaurants]
       summary: Create a restaurant
@@ -143,6 +163,25 @@ components:
       type: object
       properties:
         data: { $ref: '#/components/schemas/RestaurantResponse' }
+    RestaurantSummary:
+      type: object
+      properties:
+        name: { type: string, example: El Corral }
+        urlLogo: { type: string, example: 'https://cdn.example.com/logo.png' }
+    PageMetadata:
+      type: object
+      properties:
+        page: { type: integer, example: 0 }
+        size: { type: integer, example: 10 }
+        totalElements: { type: integer, format: int64, example: 25 }
+        totalPages: { type: integer, example: 3 }
+    RestaurantSummaryPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/RestaurantSummary' }
+        meta: { $ref: '#/components/schemas/PageMetadata' }
     DishRequest:
       type: object
       required: [name, price, description, urlImage, categoryId]

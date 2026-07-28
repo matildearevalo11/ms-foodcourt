@@ -3,6 +3,9 @@ package com.pragma.powerup.infrastructure.input.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pragma.powerup.application.dto.request.RestaurantRequestDto;
 import com.pragma.powerup.application.dto.response.RestaurantResponseDto;
+import com.pragma.powerup.application.dto.response.PageMetadataDto;
+import com.pragma.powerup.application.dto.response.PageResponseDto;
+import com.pragma.powerup.application.dto.response.RestaurantSummaryResponseDto;
 import com.pragma.powerup.application.handler.IRestaurantHandler;
 import com.pragma.powerup.domain.exception.ExternalServiceException;
 import com.pragma.powerup.domain.exception.ValidationException;
@@ -19,8 +22,10 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import java.util.List;
 
 @WebMvcTest(RestaurantRestController.class)
 @Import(SecurityConfiguration.class)
@@ -110,6 +115,28 @@ class RestaurantRestControllerTest {
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_OWNER")))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getRestaurants_AsCustomer_ShouldReturnOnlySummaryAndPagination() throws Exception {
+        when(handler.getRestaurants(0, 2)).thenReturn(new PageResponseDto<>(
+                List.of(new RestaurantSummaryResponseDto("Arepas", "arepas.png")),
+                new PageMetadataDto(0, 2, 1, 1)));
+
+        mockMvc.perform(get("/restaurants?page=0&size=2")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].name").value("Arepas"))
+                .andExpect(jsonPath("$.data[0].urlLogo").value("arepas.png"))
+                .andExpect(jsonPath("$.data[0].nit").doesNotExist())
+                .andExpect(jsonPath("$.meta.totalElements").value(1));
+    }
+
+    @Test
+    void getRestaurants_AsOwner_ShouldReturnForbidden() throws Exception {
+        mockMvc.perform(get("/restaurants")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_OWNER"))))
                 .andExpect(status().isForbidden());
     }
 

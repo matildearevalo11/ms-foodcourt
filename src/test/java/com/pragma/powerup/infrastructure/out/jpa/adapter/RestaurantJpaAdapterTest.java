@@ -5,10 +5,13 @@ import com.pragma.powerup.infrastructure.out.jpa.entity.RestaurantEntity;
 import com.pragma.powerup.infrastructure.out.jpa.mapper.IRestaurantEntityMapper;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IRestaurantRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.Optional;
+import java.util.List;
 
 class RestaurantJpaAdapterTest {
     @Test
@@ -53,5 +56,24 @@ class RestaurantJpaAdapterTest {
         when(mapper.toRestaurant(entity)).thenReturn(restaurant);
 
         assertEquals(Optional.of(restaurant), adapter.findById(5L));
+    }
+
+    @Test
+    void getAllByNameAsc_ShouldMapPageAndRequestCaseInsensitiveSorting() {
+        IRestaurantRepository repository = mock(IRestaurantRepository.class);
+        IRestaurantEntityMapper mapper = mock(IRestaurantEntityMapper.class);
+        RestaurantJpaAdapter adapter = new RestaurantJpaAdapter(repository, mapper);
+        RestaurantEntity entity = new RestaurantEntity();
+        Restaurant restaurant = new Restaurant();
+        when(repository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(entity)));
+        when(mapper.toRestaurant(entity)).thenReturn(restaurant);
+
+        var result = adapter.getAllByNameAsc(0, 5);
+
+        assertEquals(List.of(restaurant), result.content());
+        assertEquals(1, result.totalElements());
+        var pageable = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(repository).findAll(pageable.capture());
+        assertEquals("name: ASC, ignoring case", pageable.getValue().getSort().toString());
     }
 }
