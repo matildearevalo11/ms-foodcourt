@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.Optional;
+import java.util.List;
 
 @RequiredArgsConstructor
 public class DishJpaAdapter implements IDishPersistencePort {
@@ -42,5 +43,10 @@ public class DishJpaAdapter implements IDishPersistencePort {
                 : dishRepository.findByRestaurant_IdAndCategory_IdAndActiveTrue(restaurantId, categoryId, pageable);
         return new PageResult<>(result.getContent().stream().map(mapper::toDish).toList(),
                 result.getNumber(), result.getSize(), result.getTotalElements(), result.getTotalPages());
+    }
+
+    @Override
+    public List<Dish> findAllByIds(Iterable<Long> dishIds) {
+        return dishRepository.findAllById(dishIds).stream().map(mapper::toDish).toList();
     }
 }

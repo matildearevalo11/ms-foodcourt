@@ -17,6 +17,11 @@ public enum ExceptionMessages {
     INVALID_DISH_PRICE("Dish price must be a positive integer greater than zero"),
     DISH_NOT_FOUND("Dish does not exist"),
     RESTAURANT_OWNER_REQUIRED("Only the restaurant owner can manage its dishes"),
+    ACTIVE_ORDER_EXISTS("Customer already has an order in process"),
+    ORDER_ITEMS_REQUIRED("Order must contain at least one dish"),
+    DUPLICATED_ORDER_DISH("A dish cannot be repeated in the same order"),
+    INVALID_ORDER_DISH("All dishes must be active and belong to the selected restaurant"),
+    INVALID_ORDER_QUANTITY("Dish quantity must be greater than zero"),
 
     ;
 

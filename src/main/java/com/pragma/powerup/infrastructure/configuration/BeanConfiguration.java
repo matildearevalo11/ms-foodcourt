@@ -2,19 +2,27 @@ package com.pragma.powerup.infrastructure.configuration;
 
 import com.pragma.powerup.domain.api.IDishServicePort;
 import com.pragma.powerup.domain.api.IRestaurantServicePort;
+import com.pragma.powerup.domain.api.IOrderServicePort;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.domain.usecase.DishUseCase;
 import com.pragma.powerup.domain.usecase.RestaurantUseCase;
+import com.pragma.powerup.domain.usecase.OrderUseCase;
 import com.pragma.powerup.infrastructure.out.jpa.adapter.DishJpaAdapter;
 import com.pragma.powerup.infrastructure.out.jpa.adapter.RestaurantJpaAdapter;
+import com.pragma.powerup.infrastructure.out.jpa.adapter.OrderJpaAdapter;
 import com.pragma.powerup.infrastructure.out.jpa.mapper.IDishEntityMapper;
 import com.pragma.powerup.infrastructure.out.jpa.mapper.IRestaurantEntityMapper;
+import com.pragma.powerup.infrastructure.out.jpa.mapper.IOrderEntityMapper;
+import com.pragma.powerup.infrastructure.out.jpa.mapper.IOrderItemEntityMapper;
 import com.pragma.powerup.infrastructure.out.jpa.repository.ICategoryRepository;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IDishRepository;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IRestaurantRepository;
+import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderRepository;
+import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderItemRepository;
 import com.pragma.powerup.infrastructure.out.rest.adapter.UserServiceRestAdapter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -63,10 +71,23 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public IDishServicePort dishServicePort(IDishPersistencePort dishPersistencePort,
-                                             IRestaurantPersistencePort restaurantPersistencePort,
+    public IDishServicePort dishServicePort(IDishPersistencePort dishPersistencePort, IRestaurantPersistencePort restaurantPersistencePort,
                                              ILoggedUserPort loggedUserPort) {
         return new DishUseCase(dishPersistencePort, restaurantPersistencePort, loggedUserPort);
+    }
+
+    @Bean
+    public IOrderPersistencePort orderPersistencePort(IOrderRepository orderRepository,
+                                                       IOrderItemRepository orderItemRepository,
+                                                       IOrderEntityMapper orderMapper,
+                                                       IOrderItemEntityMapper orderItemMapper) {
+        return new OrderJpaAdapter(orderRepository, orderItemRepository, orderMapper, orderItemMapper);
+    }
+
+    @Bean
+    public IOrderServicePort orderServicePort(IOrderPersistencePort orderPersistencePort, IDishPersistencePort dishPersistencePort,
+                                               IRestaurantPersistencePort restaurantPersistencePort, ILoggedUserPort loggedUserPort) {
+        return new OrderUseCase(orderPersistencePort, dishPersistencePort, restaurantPersistencePort, loggedUserPort);
     }
 
 }
