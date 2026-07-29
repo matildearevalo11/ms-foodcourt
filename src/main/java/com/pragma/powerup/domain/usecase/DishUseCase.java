@@ -6,6 +6,7 @@ import com.pragma.powerup.domain.exception.ExceptionMessages;
 import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Dish;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.model.Restaurant;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
@@ -43,6 +44,14 @@ public class DishUseCase implements IDishServicePort {
         Dish dish = findOwnedDish(restaurantId, dishId);
         dish.setActive(active);
         return dishPersistencePort.saveDish(dish);
+    }
+
+    @Override
+    public PageResult<Dish> getDishes(Long restaurantId, Long categoryId, int page, int size) {
+        if (!restaurantPersistencePort.existsById(restaurantId)) {
+            throw new NotFoundException(ExceptionMessages.RESTAURANT_NOT_FOUND.getMessage());
+        }
+        return dishPersistencePort.findActiveDishes(restaurantId, categoryId, page, size);
     }
 
     private void validatePrice(Long price) {

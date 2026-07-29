@@ -3,7 +3,10 @@ package com.pragma.powerup.application.handler.impl;
 import com.pragma.powerup.application.dto.request.DishRequestDto;
 import com.pragma.powerup.application.dto.request.DishUpdateRequestDto;
 import com.pragma.powerup.application.dto.request.DishStatusRequestDto;
+import com.pragma.powerup.application.dto.request.DishFilterRequestDto;
 import com.pragma.powerup.application.dto.response.DishResponseDto;
+import com.pragma.powerup.application.dto.response.PageMetadataDto;
+import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.handler.IDishHandler;
 import com.pragma.powerup.application.mapper.IDishRequestMapper;
 import com.pragma.powerup.application.mapper.IDishResponseMapper;
@@ -34,5 +37,14 @@ public class DishHandler implements IDishHandler {
     @Override
     public DishResponseDto updateDishStatus(Long restaurantId, Long dishId, DishStatusRequestDto requestDto) {
         return responseMapper.toResponse(dishServicePort.updateDishStatus(restaurantId, dishId, requestDto.getActive()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponseDto<DishResponseDto> getDishes(Long restaurantId, DishFilterRequestDto requestDto) {
+        var result = dishServicePort.getDishes(
+                restaurantId, requestDto.getCategoryId(), requestDto.getPage(), requestDto.getSize());
+        return new PageResponseDto<>(responseMapper.toResponseList(result.content()),
+                new PageMetadataDto(result.page(), result.size(), result.totalElements(), result.totalPages()));
     }
 }

@@ -49,6 +49,35 @@ paths:
         '400': { description: Invalid fields, duplicated NIT or owner without OWNER role }
         '503': { description: User service unavailable }
   /restaurants/{restaurantId}/dishes:
+    get:
+      tags: [dishes]
+      summary: Get active dishes from a restaurant
+      operationId: getDishes
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+        - in: query
+          name: categoryId
+          required: false
+          schema: { type: integer, format: int64, minimum: 1 }
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 0, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+      responses:
+        '200':
+          description: Paginated active dishes, optionally filtered by category
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DishPage' }
+        '400': { description: Invalid pagination or category parameters }
+        '401': { description: Authentication required }
+        '403': { description: CUSTOMER role required }
+        '404': { description: Restaurant not found }
     post:
       tags: [dishes]
       summary: Create a dish for a restaurant
@@ -214,3 +243,10 @@ components:
       type: object
       properties:
         data: { $ref: '#/components/schemas/DishResponse' }
+    DishPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/DishResponse' }
+        meta: { $ref: '#/components/schemas/PageMetadata' }

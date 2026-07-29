@@ -3,6 +3,7 @@ package com.pragma.powerup.domain.usecase;
 import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Dish;
 import com.pragma.powerup.domain.model.Restaurant;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.exception.AuthorizationException;
 import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 import java.util.Optional;
+import java.util.List;
 
 class DishUseCaseTest {
     private IDishPersistencePort dishPersistencePort;
@@ -152,6 +154,21 @@ class DishUseCaseTest {
 
         assertThrows(AuthorizationException.class, () -> useCase.updateDishStatus(5L, 10L, false));
         verify(dishPersistencePort, never()).saveDish(any());
+    }
+
+    @Test
+    void getDishes_WhenRestaurantExists_ShouldDelegateFilterAndPagination() {
+        PageResult<Dish> expected = new PageResult<>(List.of(validDish()), 0, 10, 1, 1);
+        when(restaurantPersistencePort.existsById(5L)).thenReturn(true);
+        when(dishPersistencePort.findActiveDishes(5L, 2L, 0, 10)).thenReturn(expected);
+
+        assertSame(expected, useCase.getDishes(5L, 2L, 0, 10));
+    }
+
+    @Test
+    void getDishes_WhenRestaurantDoesNotExist_ShouldFail() {
+        assertThrows(NotFoundException.class, () -> useCase.getDishes(99L, null, 0, 10));
+        verifyNoInteractions(dishPersistencePort);
     }
 
     private void ownerRestaurantExists() {

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pragma.powerup.application.dto.request.DishRequestDto;
 import com.pragma.powerup.application.dto.request.DishUpdateRequestDto;
 import com.pragma.powerup.application.dto.response.DishResponseDto;
+import com.pragma.powerup.application.dto.response.PageMetadataDto;
+import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.handler.IDishHandler;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +21,11 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+
+import java.util.List;
 
 @WebMvcTest(DishRestController.class)
 @Import(SecurityConfiguration.class)
@@ -156,6 +161,39 @@ class DishRestControllerTest {
                 .andExpect(jsonPath("$.errors.active").value("Dish status is required"));
     }
 
+    @Test
+    void getDishes_AsCustomer_ShouldReturnFilteredPage() throws Exception {
+        DishResponseDto dish = new DishResponseDto();
+        dish.setId(10L);
+        dish.setName("Hamburguesa");
+        dish.setActive(true);
+        when(handler.getDishes(eq(5L), any())).thenReturn(
+                new PageResponseDto<>(List.of(dish), new PageMetadataDto(0, 5, 1, 1)));
+
+        mockMvc.perform(get("/restaurants/5/dishes")
+                        .with(customerJwt())
+                        .param("categoryId", "2")
+                        .param("page", "0")
+                        .param("size", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].name").value("Hamburguesa"))
+                .andExpect(jsonPath("$.meta.totalElements").value(1));
+    }
+
+    @Test
+    void getDishes_AsOwner_ShouldReturnForbidden() throws Exception {
+        mockMvc.perform(get("/restaurants/5/dishes").with(ownerJwt()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void getDishes_WithInvalidPagination_ShouldReturnBadRequest() throws Exception {
+        mockMvc.perform(get("/restaurants/5/dishes")
+                        .with(customerJwt())
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
+    }
+
     private DishRequestDto validRequest() {
         DishRequestDto request = new DishRequestDto();
         request.setName("Hamburguesa");
@@ -176,5 +214,10 @@ class DishRestControllerTest {
     private org.springframework.test.web.servlet.request.RequestPostProcessor ownerJwt() {
         return jwt().jwt(token -> token.subject("7"))
                 .authorities(new SimpleGrantedAuthority("ROLE_OWNER"));
+    }
+
+    private org.springframework.test.web.servlet.request.RequestPostProcessor customerJwt() {
+        return jwt().jwt(token -> token.subject("20"))
+                .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
     }
 }

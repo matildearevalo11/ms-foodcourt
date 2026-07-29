@@ -3,7 +3,9 @@ package com.pragma.powerup.infrastructure.input.rest;
 import com.pragma.powerup.application.dto.request.DishRequestDto;
 import com.pragma.powerup.application.dto.request.DishUpdateRequestDto;
 import com.pragma.powerup.application.dto.request.DishStatusRequestDto;
+import com.pragma.powerup.application.dto.request.DishFilterRequestDto;
 import com.pragma.powerup.application.dto.response.DishResponseDto;
+import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.handler.IDishHandler;
 import com.pragma.powerup.domain.enums.RoleEnum;
 import com.pragma.powerup.infrastructure.security.RequireRole;
@@ -38,5 +40,11 @@ public class DishRestController {
     public DefaultResponse<DishResponseDto> updateDishStatus(@PathVariable Long restaurantId, @PathVariable Long dishId,
             @Valid @RequestBody DishStatusRequestDto requestDto) {
         return new DefaultResponse<>(dishHandler.updateDishStatus(restaurantId, dishId, requestDto));
+    }
+
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.CUSTOMER)
+    public PageResponseDto<DishResponseDto> getDishes(@PathVariable Long restaurantId, @Valid @ModelAttribute DishFilterRequestDto requestDto) {
+        return dishHandler.getDishes(restaurantId, requestDto);
     }
 }

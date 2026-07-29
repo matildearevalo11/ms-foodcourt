@@ -92,7 +92,7 @@ class RestaurantUseCaseTest {
     @Test
     void getRestaurants_ShouldDelegatePagination() {
         PageResult<Restaurant> expected = new PageResult<>(List.of(validRestaurant()), 0, 5, 1, 1);
-        when(persistencePort.getAllByNameAsc(0, 5)).thenReturn(expected);
+        when(persistencePort.findAllByNameAsc(0, 5)).thenReturn(expected);
 
         assertEquals(expected, useCase.getRestaurants(0, 5));
     }

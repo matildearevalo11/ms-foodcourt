@@ -68,7 +68,7 @@ class RestaurantJpaAdapterTest {
         when(repository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(entity)));
         when(mapper.toRestaurant(entity)).thenReturn(restaurant);
 
-        var result = adapter.getAllByNameAsc(0, 5);
+        var result = adapter.findAllByNameAsc(0, 5);
 
         assertEquals(List.of(restaurant), result.content());
         assertEquals(1, result.totalElements());
