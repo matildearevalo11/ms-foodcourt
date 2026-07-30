@@ -4,7 +4,7 @@ import com.pragma.powerup.domain.enums.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Data
@@ -15,6 +15,6 @@ public class Order {
     private Long customerId;
     private Long restaurantId;
     private OrderStatus status;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     private List<OrderItem> items;
 }

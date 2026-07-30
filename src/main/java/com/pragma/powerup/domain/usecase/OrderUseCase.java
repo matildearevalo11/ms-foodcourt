@@ -12,8 +12,9 @@ import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import com.pragma.powerup.domain.spi.ITraceabilityPort;
 import lombok.RequiredArgsConstructor;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +26,7 @@ public class OrderUseCase implements IOrderServicePort {
     private final IDishPersistencePort dishPersistencePort;
     private final IRestaurantPersistencePort restaurantPersistencePort;
     private final ILoggedUserPort loggedUserPort;
+    private final ITraceabilityPort traceabilityPort;
 
     @Override
     public Order saveOrder(Order order) {
@@ -36,8 +38,10 @@ public class OrderUseCase implements IOrderServicePort {
         validateItems(order.getRestaurantId(), order.getItems());
         order.setCustomerId(customerId);
         order.setStatus(OrderStatus.PENDING);
-        order.setCreatedAt(LocalDateTime.now());
-        return orderPersistencePort.saveOrder(order);
+        order.setCreatedAt(Instant.now());
+        Order savedOrder = orderPersistencePort.saveOrder(order);
+        traceabilityPort.registerStatusChange(savedOrder, null);
+        return savedOrder;
     }
 
     private void validateRestaurant(Long restaurantId) {

@@ -14,7 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Table(name = "orders")
@@ -37,6 +37,6 @@ public class OrderEntity {
     private OrderStatus status;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
 }

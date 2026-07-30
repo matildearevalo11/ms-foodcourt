@@ -28,6 +28,7 @@ paths:
         '401': { description: Authentication required }
         '403': { description: CUSTOMER role required }
         '404': { description: Restaurant not found }
+        '503': { description: Traceability service unavailable }
   /restaurants:
     get:
       tags: [restaurants]

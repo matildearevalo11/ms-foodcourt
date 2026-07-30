@@ -10,6 +10,7 @@ import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import com.pragma.powerup.domain.spi.ITraceabilityPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,6 +25,7 @@ class OrderUseCaseTest {
     private IDishPersistencePort dishPersistencePort;
     private IRestaurantPersistencePort restaurantPersistencePort;
     private OrderUseCase useCase;
+    private ITraceabilityPort traceabilityPort;
 
     @BeforeEach
     void setUp() {
@@ -31,9 +33,10 @@ class OrderUseCaseTest {
         dishPersistencePort = mock(IDishPersistencePort.class);
         restaurantPersistencePort = mock(IRestaurantPersistencePort.class);
         ILoggedUserPort loggedUserPort = mock(ILoggedUserPort.class);
+        traceabilityPort = mock(ITraceabilityPort.class);
         when(loggedUserPort.getLoggedUserId()).thenReturn(20L);
         useCase = new OrderUseCase(orderPersistencePort, dishPersistencePort,
-                restaurantPersistencePort, loggedUserPort);
+                restaurantPersistencePort, loggedUserPort, traceabilityPort);
     }
 
     @Test
@@ -50,6 +53,7 @@ class OrderUseCaseTest {
         assertEquals(OrderStatus.PENDING, result.getStatus());
         assertNotNull(result.getCreatedAt());
         verify(orderPersistencePort).saveOrder(order);
+        verify(traceabilityPort).registerStatusChange(order, null);
     }
 
     @Test

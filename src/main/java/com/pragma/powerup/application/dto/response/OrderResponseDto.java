@@ -3,7 +3,7 @@ package com.pragma.powerup.application.dto.response;
 import com.pragma.powerup.domain.enums.OrderStatus;
 import lombok.Getter;
 import lombok.Setter;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Getter
@@ -13,6 +13,6 @@ public class OrderResponseDto {
     private Long customerId;
     private Long restaurantId;
     private OrderStatus status;
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     private List<OrderItemResponseDto> items;
 }

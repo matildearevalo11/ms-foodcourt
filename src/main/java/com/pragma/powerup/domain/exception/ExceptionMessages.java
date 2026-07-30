@@ -22,6 +22,7 @@ public enum ExceptionMessages {
     DUPLICATED_ORDER_DISH("A dish cannot be repeated in the same order"),
     INVALID_ORDER_DISH("All dishes must be active and belong to the selected restaurant"),
     INVALID_ORDER_QUANTITY("Dish quantity must be greater than zero"),
+    TRACEABILITY_SERVICE_UNAVAILABLE("Traceability service is unavailable"),
 
     ;
 
