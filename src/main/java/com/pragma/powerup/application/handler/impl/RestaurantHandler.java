@@ -37,4 +37,10 @@ public class RestaurantHandler implements IRestaurantHandler {
         return new PageResponseDto<>(summaryResponseMapper.toResponseList(result.content()),
                 new PageMetadataDto(result.page(), result.size(), result.totalElements(), result.totalPages()));
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void validateLoggedOwner(Long restaurantId) {
+        servicePort.validateLoggedOwner(restaurantId);
+    }
 }

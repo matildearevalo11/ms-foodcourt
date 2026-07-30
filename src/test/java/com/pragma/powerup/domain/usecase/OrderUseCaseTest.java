@@ -6,6 +6,7 @@ import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Dish;
 import com.pragma.powerup.domain.model.Order;
 import com.pragma.powerup.domain.model.OrderItem;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
@@ -24,6 +25,7 @@ class OrderUseCaseTest {
     private IOrderPersistencePort orderPersistencePort;
     private IDishPersistencePort dishPersistencePort;
     private IRestaurantPersistencePort restaurantPersistencePort;
+    private ILoggedUserPort loggedUserPort;
     private OrderUseCase useCase;
     private ITraceabilityPort traceabilityPort;
 
@@ -32,7 +34,7 @@ class OrderUseCaseTest {
         orderPersistencePort = mock(IOrderPersistencePort.class);
         dishPersistencePort = mock(IDishPersistencePort.class);
         restaurantPersistencePort = mock(IRestaurantPersistencePort.class);
-        ILoggedUserPort loggedUserPort = mock(ILoggedUserPort.class);
+        loggedUserPort = mock(ILoggedUserPort.class);
         traceabilityPort = mock(ITraceabilityPort.class);
         when(loggedUserPort.getLoggedUserId()).thenReturn(20L);
         useCase = new OrderUseCase(orderPersistencePort, dishPersistencePort,
@@ -121,8 +123,18 @@ class OrderUseCaseTest {
         assertThrows(ValidationException.class, () -> useCase.saveOrder(order));
     }
 
+    @Test
+    void getOrders_ShouldUseRestaurantFromLoggedEmployee() {
+        PageResult<Order> expected = new PageResult<>(List.of(validOrder()), 0, 10, 1, 1);
+        when(loggedUserPort.getLoggedRestaurantId()).thenReturn(5L);
+        when(orderPersistencePort.findByRestaurantIdAndStatus(5L, OrderStatus.PENDING, 0, 10))
+                .thenReturn(expected);
+
+        assertSame(expected, useCase.getOrders(OrderStatus.PENDING, 0, 10));
+    }
+
     private Order validOrder() {
-        return new Order(null, null, 5L, null, null,
+        return new Order(null, null, 5L, null, null, null,
                 List.of(new OrderItem(null, 10L, 2), new OrderItem(null, 11L, 1)));
     }
 

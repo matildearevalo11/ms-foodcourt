@@ -21,6 +21,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -138,6 +139,15 @@ class RestaurantRestControllerTest {
         mockMvc.perform(get("/restaurants")
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_OWNER"))))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void validateOwnership_AsOwner_ShouldReturnNoContent() throws Exception {
+        mockMvc.perform(get("/restaurants/5/ownership")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_OWNER"))))
+                .andExpect(status().isNoContent());
+
+        verify(handler).validateLoggedOwner(5L);
     }
 
     private void performBadRequest(RestaurantRequestDto request, String field, String message) throws Exception {

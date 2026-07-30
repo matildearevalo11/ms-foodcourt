@@ -40,14 +40,35 @@ class LoggedUserAdapterTest {
         assertThrows(AuthenticationCredentialsNotFoundException.class, adapter::getLoggedUserId);
     }
 
+    @Test
+    void getLoggedRestaurantId_WithEmployeeJwt_ShouldReturnRestaurant() {
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt(30L, 5L)));
+
+        assertEquals(5L, adapter.getLoggedRestaurantId());
+    }
+
+    @Test
+    void getLoggedRestaurantId_WithoutClaim_ShouldFail() {
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt(30L)));
+
+        assertThrows(AuthenticationCredentialsNotFoundException.class, adapter::getLoggedRestaurantId);
+    }
+
     private Jwt jwt(Object userId) {
+        return jwt(userId, null);
+    }
+
+    private Jwt jwt(Object userId, Long restaurantId) {
         Instant now = Instant.now();
-        return Jwt.withTokenValue("token")
+        Jwt.Builder builder = Jwt.withTokenValue("token")
                 .header("alg", "HS256")
                 .subject("owner@foodcourt.com")
                 .claim("userId", userId)
                 .issuedAt(now)
-                .expiresAt(now.plusSeconds(300))
-                .build();
+                .expiresAt(now.plusSeconds(300));
+        if (restaurantId != null) {
+            builder.claim("restaurantId", restaurantId);
+        }
+        return builder.build();
     }
 }

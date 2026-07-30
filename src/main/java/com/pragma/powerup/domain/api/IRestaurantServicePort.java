@@ -6,4 +6,5 @@ import com.pragma.powerup.domain.model.PageResult;
 public interface IRestaurantServicePort {
     Restaurant saveRestaurant(Restaurant restaurant);
     PageResult<Restaurant> getRestaurants(int page, int size);
+    void validateLoggedOwner(Long restaurantId);
 }

@@ -52,4 +52,15 @@ class RestaurantHandlerTest {
         assertSame(summaries, result.data());
         assertEquals(1, result.meta().totalElements());
     }
+
+    @Test
+    void validateLoggedOwner_ShouldDelegate() {
+        IRestaurantServicePort service = mock(IRestaurantServicePort.class);
+        RestaurantHandler handler = new RestaurantHandler(service, mock(IRestaurantRequestMapper.class),
+                mock(IRestaurantResponseMapper.class), mock(IRestaurantSummaryResponseMapper.class));
+
+        handler.validateLoggedOwner(5L);
+
+        verify(service).validateLoggedOwner(5L);
+    }
 }

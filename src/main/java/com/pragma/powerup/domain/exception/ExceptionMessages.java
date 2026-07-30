@@ -23,6 +23,9 @@ public enum ExceptionMessages {
     INVALID_ORDER_DISH("All dishes must be active and belong to the selected restaurant"),
     INVALID_ORDER_QUANTITY("Dish quantity must be greater than zero"),
     TRACEABILITY_SERVICE_UNAVAILABLE("Traceability service is unavailable"),
+    AUTHENTICATED_USER_NOT_FOUND("Authenticated user not found"),
+    INVALID_AUTHENTICATED_USER_ID("Invalid authenticated user identifier"),
+    EMPLOYEE_RESTAURANT_NOT_ASSIGNED("Authenticated employee has no restaurant assigned"),
 
     ;
 

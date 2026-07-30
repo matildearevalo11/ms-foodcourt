@@ -32,6 +32,9 @@ public class OrderEntity {
     @JoinColumn(name = "restaurant_id", nullable = false)
     private RestaurantEntity restaurant;
 
+    @Column(name = "assigned_employee_id")
+    private Long assignedEmployeeId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status;

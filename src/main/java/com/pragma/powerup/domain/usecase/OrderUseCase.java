@@ -8,6 +8,7 @@ import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Dish;
 import com.pragma.powerup.domain.model.Order;
 import com.pragma.powerup.domain.model.OrderItem;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
@@ -42,6 +43,12 @@ public class OrderUseCase implements IOrderServicePort {
         Order savedOrder = orderPersistencePort.saveOrder(order);
         traceabilityPort.registerStatusChange(savedOrder, null);
         return savedOrder;
+    }
+
+    @Override
+    public PageResult<Order> getOrders(OrderStatus status, int page, int size) {
+        return orderPersistencePort.findByRestaurantIdAndStatus(
+                loggedUserPort.getLoggedRestaurantId(), status, page, size);
     }
 
     private void validateRestaurant(Long restaurantId) {

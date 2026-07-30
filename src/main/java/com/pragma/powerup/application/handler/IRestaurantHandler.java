@@ -8,4 +8,5 @@ import com.pragma.powerup.application.dto.response.RestaurantSummaryResponseDto;
 public interface IRestaurantHandler {
     RestaurantResponseDto saveRestaurant(RestaurantRequestDto requestDto);
     PageResponseDto<RestaurantSummaryResponseDto> getRestaurants(int page, int size);
+    void validateLoggedOwner(Long restaurantId);
 }

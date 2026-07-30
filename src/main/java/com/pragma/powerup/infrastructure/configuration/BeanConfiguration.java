@@ -80,9 +80,9 @@ public class BeanConfiguration {
     }
 
     @Bean
-    public IRestaurantServicePort restaurantServicePort(
-            IRestaurantPersistencePort persistencePort, IOwnerValidationPort ownerValidationPort) {
-        return new RestaurantUseCase(persistencePort, ownerValidationPort);
+    public IRestaurantServicePort restaurantServicePort(IRestaurantPersistencePort persistencePort,
+                                     IOwnerValidationPort ownerValidationPort, ILoggedUserPort loggedUserPort) {
+        return new RestaurantUseCase(persistencePort, ownerValidationPort, loggedUserPort);
     }
 
     @Bean

@@ -1,10 +1,13 @@
 package com.pragma.powerup.domain.usecase;
 
 import com.pragma.powerup.domain.exception.ValidationException;
+import com.pragma.powerup.domain.exception.AuthorizationException;
+import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.model.Restaurant;
 import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -18,12 +21,13 @@ import java.util.List;
 class RestaurantUseCaseTest {
     @Mock private IRestaurantPersistencePort persistencePort;
     @Mock private IOwnerValidationPort ownerValidationPort;
+    @Mock private ILoggedUserPort loggedUserPort;
     private RestaurantUseCase useCase;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        useCase = new RestaurantUseCase(persistencePort, ownerValidationPort);
+        useCase = new RestaurantUseCase(persistencePort, ownerValidationPort, loggedUserPort);
     }
 
     @Test
@@ -95,6 +99,28 @@ class RestaurantUseCaseTest {
         when(persistencePort.findAllByNameAsc(0, 5)).thenReturn(expected);
 
         assertEquals(expected, useCase.getRestaurants(0, 5));
+    }
+
+    @Test
+    void validateLoggedOwner_WhenRestaurantBelongsToOwner_ShouldPass() {
+        Restaurant restaurant = validRestaurant();
+        when(persistencePort.findById(5L)).thenReturn(java.util.Optional.of(restaurant));
+        when(loggedUserPort.getLoggedUserId()).thenReturn(7L);
+
+        useCase.validateLoggedOwner(5L);
+    }
+
+    @Test
+    void validateLoggedOwner_WhenRestaurantBelongsToAnotherOwner_ShouldFail() {
+        when(persistencePort.findById(5L)).thenReturn(java.util.Optional.of(validRestaurant()));
+        when(loggedUserPort.getLoggedUserId()).thenReturn(9L);
+
+        assertThrows(AuthorizationException.class, () -> useCase.validateLoggedOwner(5L));
+    }
+
+    @Test
+    void validateLoggedOwner_WhenRestaurantDoesNotExist_ShouldFail() {
+        assertThrows(NotFoundException.class, () -> useCase.validateLoggedOwner(99L));
     }
 
     private Restaurant validRestaurant() {

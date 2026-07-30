@@ -10,6 +10,8 @@ import com.pragma.powerup.infrastructure.out.jpa.mapper.IOrderItemEntityMapper;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderItemRepository;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderRepository;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.List;
 import java.util.Set;
@@ -52,5 +54,30 @@ class OrderJpaAdapterTest {
         assertSame(saved, adapter.saveOrder(order));
         assertSame(orderEntity, itemEntity.getOrder());
         assertEquals(List.of(orderItem), saved.getItems());
+    }
+
+    @Test
+    void findByRestaurantIdAndStatus_ShouldReturnOrdersWithItems() {
+        IOrderRepository orderRepository = mock(IOrderRepository.class);
+        IOrderItemRepository itemRepository = mock(IOrderItemRepository.class);
+        IOrderEntityMapper orderMapper = mock(IOrderEntityMapper.class);
+        IOrderItemEntityMapper itemMapper = mock(IOrderItemEntityMapper.class);
+        OrderJpaAdapter adapter = new OrderJpaAdapter(orderRepository, itemRepository, orderMapper, itemMapper);
+        OrderEntity entity = new OrderEntity();
+        entity.setId(25L);
+        OrderItemEntity itemEntity = new OrderItemEntity();
+        itemEntity.setOrder(entity);
+        Order order = new Order();
+        OrderItem item = new OrderItem();
+        when(orderRepository.findByRestaurant_IdAndStatus(eq(5L), eq(OrderStatus.PENDING), any()))
+                .thenReturn(new PageImpl<>(List.of(entity), PageRequest.of(0, 10), 1));
+        when(itemRepository.findByOrder_IdIn(List.of(25L))).thenReturn(List.of(itemEntity));
+        when(orderMapper.toOrder(entity)).thenReturn(order);
+        when(itemMapper.toOrderItems(List.of(itemEntity))).thenReturn(List.of(item));
+
+        var result = adapter.findByRestaurantIdAndStatus(5L, OrderStatus.PENDING, 0, 10);
+
+        assertEquals(List.of(order), result.content());
+        assertEquals(List.of(item), order.getItems());
     }
 }

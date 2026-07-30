@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pragma.powerup.application.dto.request.OrderItemRequestDto;
 import com.pragma.powerup.application.dto.request.OrderRequestDto;
 import com.pragma.powerup.application.dto.response.OrderResponseDto;
+import com.pragma.powerup.application.dto.response.OrderItemResponseDto;
+import com.pragma.powerup.application.dto.response.PageMetadataDto;
+import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.handler.IOrderHandler;
 import com.pragma.powerup.domain.enums.OrderStatus;
 import com.pragma.powerup.infrastructure.configuration.SecurityConfiguration;
@@ -22,6 +25,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(OrderRestController.class)
@@ -67,6 +71,46 @@ class OrderRestControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void getOrders_AsEmployee_ShouldReturnFilteredOrdersWithAllFields() throws Exception {
+        OrderItemResponseDto item = new OrderItemResponseDto();
+        item.setDishId(10L);
+        item.setQuantity(2);
+        OrderResponseDto order = new OrderResponseDto();
+        order.setId(25L);
+        order.setCustomerId(20L);
+        order.setRestaurantId(5L);
+        order.setStatus(OrderStatus.PENDING);
+        order.setCreatedAt(java.time.Instant.parse("2026-07-29T15:00:00Z"));
+        order.setItems(List.of(item));
+        when(handler.getOrders(any())).thenReturn(new PageResponseDto<>(List.of(order),
+                new PageMetadataDto(0, 5, 1, 1)));
+
+        mockMvc.perform(get("/orders?status=PENDING&page=0&size=5")
+                        .with(employeeJwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].id").value(25))
+                .andExpect(jsonPath("$.data[0].customerId").value(20))
+                .andExpect(jsonPath("$.data[0].restaurantId").value(5))
+                .andExpect(jsonPath("$.data[0].status").value("PENDING"))
+                .andExpect(jsonPath("$.data[0].createdAt").exists())
+                .andExpect(jsonPath("$.data[0].items[0].dishId").value(10))
+                .andExpect(jsonPath("$.data[0].items[0].quantity").value(2))
+                .andExpect(jsonPath("$.meta.totalElements").value(1));
+    }
+
+    @Test
+    void getOrders_WithoutStatus_ShouldReturnBadRequest() throws Exception {
+        mockMvc.perform(get("/orders").with(employeeJwt()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getOrders_AsCustomer_ShouldReturnForbidden() throws Exception {
+        mockMvc.perform(get("/orders?status=PENDING").with(customerJwt()))
+                .andExpect(status().isForbidden());
+    }
+
     private OrderRequestDto validRequest() {
         OrderItemRequestDto item = new OrderItemRequestDto();
         item.setDishId(10L);
@@ -80,5 +124,10 @@ class OrderRestControllerTest {
     private org.springframework.test.web.servlet.request.RequestPostProcessor customerJwt() {
         return jwt().jwt(token -> token.claim("userId", 20L))
                 .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
+    }
+
+    private org.springframework.test.web.servlet.request.RequestPostProcessor employeeJwt() {
+        return jwt().jwt(token -> token.claim("userId", 30L).claim("restaurantId", 5L))
+                .authorities(new SimpleGrantedAuthority("ROLE_EMPLOYEE"));
     }
 }

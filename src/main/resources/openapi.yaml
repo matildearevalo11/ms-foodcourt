@@ -9,6 +9,32 @@ security:
   - bearerAuth: []
 paths:
   /orders:
+    get:
+      tags: [orders]
+      summary: Get restaurant orders filtered by status
+      operationId: getOrders
+      parameters:
+        - in: query
+          name: status
+          required: true
+          schema:
+            type: string
+            enum: [PENDING, IN_PREPARATION, READY, DELIVERED, CANCELED]
+        - in: query
+          name: page
+          schema: { type: integer, minimum: 0, default: 0 }
+        - in: query
+          name: size
+          schema: { type: integer, minimum: 1, maximum: 100, default: 10 }
+      responses:
+        '200':
+          description: Orders from the authenticated employee's restaurant
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderPage' }
+        '400': { description: Invalid status or pagination }
+        '401': { description: Authentication required }
+        '403': { description: EMPLOYEE role required }
     post:
       tags: [orders]
       summary: Create an order
@@ -69,6 +95,21 @@ paths:
                 $ref: '#/components/schemas/RestaurantResponseEnvelope'
         '400': { description: Invalid fields, duplicated NIT or owner without OWNER role }
         '503': { description: User service unavailable }
+  /restaurants/{restaurantId}/ownership:
+    get:
+      tags: [restaurants]
+      summary: Validate that the authenticated owner owns a restaurant
+      operationId: validateOwnership
+      parameters:
+        - in: path
+          name: restaurantId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '204': { description: Restaurant belongs to the authenticated owner }
+        '401': { description: Authentication required }
+        '403': { description: OWNER role or ownership required }
+        '404': { description: Restaurant not found }
   /restaurants/{restaurantId}/dishes:
     get:
       tags: [dishes]
@@ -293,9 +334,17 @@ components:
           properties:
             id: { type: integer, format: int64 }
             customerId: { type: integer, format: int64 }
+            assignedEmployeeId: { type: integer, format: int64, nullable: true }
             status: { type: string, enum: [PENDING, IN_PREPARATION, READY, DELIVERED, CANCELED] }
             createdAt: { type: string, format: date-time }
     OrderResponseEnvelope:
       type: object
       properties:
         data: { $ref: '#/components/schemas/OrderResponse' }
+    OrderPage:
+      type: object
+      properties:
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/OrderResponse' }
+        meta: { $ref: '#/components/schemas/PageMetadata' }
