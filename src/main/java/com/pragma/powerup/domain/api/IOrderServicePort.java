@@ -7,4 +7,5 @@ import com.pragma.powerup.domain.enums.OrderStatus;
 public interface IOrderServicePort {
     Order saveOrder(Order order);
     PageResult<Order> getOrders(OrderStatus status, int page, int size);
+    Order assignOrder(Long orderId);
 }

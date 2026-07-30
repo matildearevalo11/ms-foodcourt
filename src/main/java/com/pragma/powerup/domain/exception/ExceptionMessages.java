@@ -26,6 +26,7 @@ public enum ExceptionMessages {
     AUTHENTICATED_USER_NOT_FOUND("Authenticated user not found"),
     INVALID_AUTHENTICATED_USER_ID("Invalid authenticated user identifier"),
     EMPLOYEE_RESTAURANT_NOT_ASSIGNED("Authenticated employee has no restaurant assigned"),
+    ORDER_NOT_AVAILABLE_FOR_ASSIGNMENT("Order is not pending, is already assigned, or belongs to another restaurant"),
 
     ;
 

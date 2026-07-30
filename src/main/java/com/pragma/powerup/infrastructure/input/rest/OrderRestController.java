@@ -14,6 +14,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -36,5 +38,11 @@ public class OrderRestController {
     @RequireRole(RoleEnum.EMPLOYEE)
     public PageResponseDto<OrderResponseDto> getOrders(@Valid @ModelAttribute OrderFilterRequestDto requestDto) {
         return orderHandler.getOrders(requestDto);
+    }
+
+    @PatchMapping(value = "/{orderId}/assignment", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.EMPLOYEE)
+    public DefaultResponse<OrderResponseDto> assignOrder(@PathVariable Long orderId) {
+        return new DefaultResponse<>(orderHandler.assignOrder(orderId));
     }
 }

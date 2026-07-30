@@ -51,6 +51,16 @@ public class OrderUseCase implements IOrderServicePort {
                 loggedUserPort.getLoggedRestaurantId(), status, page, size);
     }
 
+    @Override
+    public Order assignOrder(Long orderId) {
+        Order order = orderPersistencePort.assignPendingOrder(orderId,
+                        loggedUserPort.getLoggedRestaurantId(), loggedUserPort.getLoggedUserId())
+                .orElseThrow(() -> new ValidationException(
+                        ExceptionMessages.ORDER_NOT_AVAILABLE_FOR_ASSIGNMENT.getMessage()));
+        traceabilityPort.registerStatusChange(order, OrderStatus.PENDING);
+        return order;
+    }
+
     private void validateRestaurant(Long restaurantId) {
         if (!restaurantPersistencePort.existsById(restaurantId)) {
             throw new NotFoundException(ExceptionMessages.RESTAURANT_NOT_FOUND.getMessage());

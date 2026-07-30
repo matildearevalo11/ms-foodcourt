@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -58,5 +59,19 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
         }).toList();
         return new PageResult<>(orders, orderPage.getNumber(), orderPage.getSize(),
                 orderPage.getTotalElements(), orderPage.getTotalPages());
+    }
+
+    @Override
+    public Optional<Order> assignPendingOrder(Long orderId, Long restaurantId, Long employeeId) {
+        int updatedOrders = orderRepository.assignIfAvailable(orderId, restaurantId, employeeId,
+                OrderStatus.PENDING, OrderStatus.IN_PREPARATION);
+        if (updatedOrders == 0) {
+            return Optional.empty();
+        }
+        return orderRepository.findById(orderId).map(entity -> {
+            Order order = orderMapper.toOrder(entity);
+            order.setItems(orderItemMapper.toOrderItems(orderItemRepository.findByOrder_IdIn(List.of(orderId))));
+            return order;
+        });
     }
 }

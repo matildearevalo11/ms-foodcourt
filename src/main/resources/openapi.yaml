@@ -55,6 +55,26 @@ paths:
         '403': { description: CUSTOMER role required }
         '404': { description: Restaurant not found }
         '503': { description: Traceability service unavailable }
+  /orders/{orderId}/assignment:
+    patch:
+      tags: [orders]
+      summary: Assign the authenticated employee to a pending order
+      operationId: assignOrder
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '200':
+          description: Order assigned and moved to IN_PREPARATION
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponseEnvelope' }
+        '400': { description: Order is unavailable, already assigned, or belongs to another restaurant }
+        '401': { description: Authentication required }
+        '403': { description: EMPLOYEE role required }
+        '503': { description: Traceability service unavailable }
   /restaurants:
     get:
       tags: [restaurants]

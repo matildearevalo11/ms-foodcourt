@@ -26,6 +26,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(OrderRestController.class)
@@ -108,6 +109,27 @@ class OrderRestControllerTest {
     @Test
     void getOrders_AsCustomer_ShouldReturnForbidden() throws Exception {
         mockMvc.perform(get("/orders?status=PENDING").with(customerJwt()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void assignOrder_AsEmployee_ShouldReturnOrderInPreparation() throws Exception {
+        OrderResponseDto response = new OrderResponseDto();
+        response.setId(25L);
+        response.setAssignedEmployeeId(30L);
+        response.setStatus(OrderStatus.IN_PREPARATION);
+        when(handler.assignOrder(25L)).thenReturn(response);
+
+        mockMvc.perform(patch("/orders/25/assignment").with(employeeJwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(25))
+                .andExpect(jsonPath("$.data.assignedEmployeeId").value(30))
+                .andExpect(jsonPath("$.data.status").value("IN_PREPARATION"));
+    }
+
+    @Test
+    void assignOrder_AsCustomer_ShouldReturnForbidden() throws Exception {
+        mockMvc.perform(patch("/orders/25/assignment").with(customerJwt()))
                 .andExpect(status().isForbidden());
     }
 

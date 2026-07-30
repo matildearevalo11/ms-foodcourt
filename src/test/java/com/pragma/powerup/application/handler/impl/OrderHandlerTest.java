@@ -53,4 +53,17 @@ class OrderHandlerTest {
         assertEquals(List.of(response), result.data());
         assertEquals(1, result.meta().totalElements());
     }
+
+    @Test
+    void assignOrder_ShouldDelegateAndMapResponse() {
+        IOrderServicePort service = mock(IOrderServicePort.class);
+        IOrderResponseMapper responseMapper = mock(IOrderResponseMapper.class);
+        OrderHandler handler = new OrderHandler(service, mock(IOrderRequestMapper.class), responseMapper);
+        Order order = new Order();
+        OrderResponseDto response = new OrderResponseDto();
+        when(service.assignOrder(25L)).thenReturn(order);
+        when(responseMapper.toResponse(order)).thenReturn(response);
+
+        assertSame(response, handler.assignOrder(25L));
+    }
 }

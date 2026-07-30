@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -131,6 +132,29 @@ class OrderUseCaseTest {
                 .thenReturn(expected);
 
         assertSame(expected, useCase.getOrders(OrderStatus.PENDING, 0, 10));
+    }
+
+    @Test
+    void assignOrder_ShouldAssignLoggedEmployeeAndRegisterStatusChange() {
+        Order assignedOrder = validOrder();
+        assignedOrder.setId(25L);
+        assignedOrder.setAssignedEmployeeId(20L);
+        assignedOrder.setStatus(OrderStatus.IN_PREPARATION);
+        when(loggedUserPort.getLoggedRestaurantId()).thenReturn(5L);
+        when(orderPersistencePort.assignPendingOrder(25L, 5L, 20L))
+                .thenReturn(Optional.of(assignedOrder));
+
+        assertSame(assignedOrder, useCase.assignOrder(25L));
+        verify(traceabilityPort).registerStatusChange(assignedOrder, OrderStatus.PENDING);
+    }
+
+    @Test
+    void assignOrder_WhenOrderIsNotAvailable_ShouldFailWithoutTraceability() {
+        when(loggedUserPort.getLoggedRestaurantId()).thenReturn(5L);
+        when(orderPersistencePort.assignPendingOrder(25L, 5L, 20L)).thenReturn(Optional.empty());
+
+        assertThrows(ValidationException.class, () -> useCase.assignOrder(25L));
+        verifyNoInteractions(traceabilityPort);
     }
 
     private Order validOrder() {

@@ -80,4 +80,39 @@ class OrderJpaAdapterTest {
         assertEquals(List.of(order), result.content());
         assertEquals(List.of(item), order.getItems());
     }
+
+    @Test
+    void assignPendingOrder_WhenAvailable_ShouldReturnUpdatedOrderWithItems() {
+        IOrderRepository orderRepository = mock(IOrderRepository.class);
+        IOrderItemRepository itemRepository = mock(IOrderItemRepository.class);
+        IOrderEntityMapper orderMapper = mock(IOrderEntityMapper.class);
+        IOrderItemEntityMapper itemMapper = mock(IOrderItemEntityMapper.class);
+        OrderJpaAdapter adapter = new OrderJpaAdapter(orderRepository, itemRepository, orderMapper, itemMapper);
+        OrderEntity entity = new OrderEntity();
+        entity.setId(25L);
+        Order order = new Order();
+        OrderItemEntity itemEntity = new OrderItemEntity();
+        OrderItem item = new OrderItem();
+        when(orderRepository.assignIfAvailable(25L, 5L, 30L,
+                OrderStatus.PENDING, OrderStatus.IN_PREPARATION)).thenReturn(1);
+        when(orderRepository.findById(25L)).thenReturn(java.util.Optional.of(entity));
+        when(itemRepository.findByOrder_IdIn(List.of(25L))).thenReturn(List.of(itemEntity));
+        when(orderMapper.toOrder(entity)).thenReturn(order);
+        when(itemMapper.toOrderItems(List.of(itemEntity))).thenReturn(List.of(item));
+
+        var result = adapter.assignPendingOrder(25L, 5L, 30L);
+
+        assertTrue(result.isPresent());
+        assertEquals(List.of(item), result.orElseThrow().getItems());
+    }
+
+    @Test
+    void assignPendingOrder_WhenUnavailable_ShouldNotLoadOrder() {
+        IOrderRepository orderRepository = mock(IOrderRepository.class);
+        OrderJpaAdapter adapter = new OrderJpaAdapter(orderRepository, mock(IOrderItemRepository.class),
+                mock(IOrderEntityMapper.class), mock(IOrderItemEntityMapper.class));
+
+        assertTrue(adapter.assignPendingOrder(25L, 5L, 30L).isEmpty());
+        verify(orderRepository, never()).findById(anyLong());
+    }
 }
