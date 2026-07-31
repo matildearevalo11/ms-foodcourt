@@ -7,6 +7,7 @@ import com.pragma.powerup.domain.model.Dish;
 import com.pragma.powerup.domain.model.Order;
 import com.pragma.powerup.domain.model.OrderItem;
 import com.pragma.powerup.domain.model.PageResult;
+import com.pragma.powerup.domain.model.Employee;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
@@ -35,6 +36,7 @@ class OrderUseCaseTest {
     private IPinGeneratorPort pinGeneratorPort;
     private IUserContactPort userContactPort;
     private INotificationPort notificationPort;
+    private Employee loggedEmployee;
 
     @BeforeEach
     void setUp() {
@@ -47,6 +49,8 @@ class OrderUseCaseTest {
         userContactPort = mock(IUserContactPort.class);
         notificationPort = mock(INotificationPort.class);
         when(loggedUserPort.getLoggedUserId()).thenReturn(20L);
+        loggedEmployee = new Employee(20L, "Ana Gómez");
+        when(loggedUserPort.getLoggedEmployee()).thenReturn(loggedEmployee);
         useCase = new OrderUseCase(orderPersistencePort, dishPersistencePort,
                 restaurantPersistencePort, loggedUserPort, traceabilityPort,
                 pinGeneratorPort, userContactPort, notificationPort);
@@ -66,7 +70,7 @@ class OrderUseCaseTest {
         assertEquals(OrderStatus.PENDING, result.getStatus());
         assertNotNull(result.getCreatedAt());
         verify(orderPersistencePort).saveOrder(order);
-        verify(traceabilityPort).registerStatusChange(order, null);
+        verify(traceabilityPort).registerStatusChange(order, null, null);
     }
 
     @Test
@@ -155,7 +159,7 @@ class OrderUseCaseTest {
                 .thenReturn(Optional.of(assignedOrder));
 
         assertSame(assignedOrder, useCase.assignOrder(25L));
-        verify(traceabilityPort).registerStatusChange(assignedOrder, OrderStatus.PENDING);
+        verify(traceabilityPort).registerStatusChange(assignedOrder, OrderStatus.PENDING, loggedEmployee);
     }
 
     @Test
@@ -182,7 +186,7 @@ class OrderUseCaseTest {
         when(userContactPort.getCellphone(20L)).thenReturn("+573001234567");
 
         assertSame(readyOrder, useCase.markOrderReady(25L));
-        verify(traceabilityPort).registerStatusChange(readyOrder, OrderStatus.IN_PREPARATION);
+        verify(traceabilityPort).registerStatusChange(readyOrder, OrderStatus.IN_PREPARATION, loggedEmployee);
         verify(notificationPort).notifyOrderReady("+573001234567", "482913");
     }
 
@@ -208,7 +212,7 @@ class OrderUseCaseTest {
                 .thenReturn(Optional.of(deliveredOrder));
 
         assertSame(deliveredOrder, useCase.deliverOrder(25L, "482913"));
-        verify(traceabilityPort).registerStatusChange(deliveredOrder, OrderStatus.READY);
+        verify(traceabilityPort).registerStatusChange(deliveredOrder, OrderStatus.READY, loggedEmployee);
     }
 
     @Test
@@ -229,7 +233,7 @@ class OrderUseCaseTest {
         when(orderPersistencePort.cancelPendingOrder(25L, 20L)).thenReturn(Optional.of(canceledOrder));
 
         assertSame(canceledOrder, useCase.cancelOrder(25L));
-        verify(traceabilityPort).registerStatusChange(canceledOrder, OrderStatus.PENDING);
+        verify(traceabilityPort).registerStatusChange(canceledOrder, OrderStatus.PENDING, null);
     }
 
     @Test

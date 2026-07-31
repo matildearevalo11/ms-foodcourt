@@ -47,7 +47,7 @@ public class OrderUseCase implements IOrderServicePort {
         order.setStatus(OrderStatus.PENDING);
         order.setCreatedAt(Instant.now());
         Order savedOrder = orderPersistencePort.saveOrder(order);
-        traceabilityPort.registerStatusChange(savedOrder, null);
+        traceabilityPort.registerStatusChange(savedOrder, null, null);
         return savedOrder;
     }
 
@@ -63,7 +63,7 @@ public class OrderUseCase implements IOrderServicePort {
                         loggedUserPort.getLoggedRestaurantId(), loggedUserPort.getLoggedUserId())
                 .orElseThrow(() -> new ValidationException(
                         ExceptionMessages.ORDER_NOT_AVAILABLE_FOR_ASSIGNMENT.getMessage()));
-        traceabilityPort.registerStatusChange(order, OrderStatus.PENDING);
+        traceabilityPort.registerStatusChange(order, OrderStatus.PENDING, loggedUserPort.getLoggedEmployee());
         return order;
     }
 
@@ -75,7 +75,7 @@ public class OrderUseCase implements IOrderServicePort {
                 .orElseThrow(() -> new ValidationException(
                         ExceptionMessages.ORDER_NOT_AVAILABLE_TO_MARK_READY.getMessage()));
         String cellphone = userContactPort.getCellphone(order.getCustomerId());
-        traceabilityPort.registerStatusChange(order, OrderStatus.IN_PREPARATION);
+        traceabilityPort.registerStatusChange(order, OrderStatus.IN_PREPARATION, loggedUserPort.getLoggedEmployee());
         notificationPort.notifyOrderReady(cellphone, securityPin);
         return order;
     }
@@ -86,7 +86,7 @@ public class OrderUseCase implements IOrderServicePort {
                         loggedUserPort.getLoggedUserId(), securityPin)
                 .orElseThrow(() -> new ValidationException(
                         ExceptionMessages.ORDER_NOT_AVAILABLE_FOR_DELIVERY.getMessage()));
-        traceabilityPort.registerStatusChange(order, OrderStatus.READY);
+        traceabilityPort.registerStatusChange(order, OrderStatus.READY, loggedUserPort.getLoggedEmployee());
         return order;
     }
 
@@ -95,7 +95,7 @@ public class OrderUseCase implements IOrderServicePort {
         Order order = orderPersistencePort.cancelPendingOrder(orderId, loggedUserPort.getLoggedUserId())
                 .orElseThrow(() -> new ValidationException(
                         ExceptionMessages.ORDER_CANNOT_BE_CANCELED.getMessage()));
-        traceabilityPort.registerStatusChange(order, OrderStatus.PENDING);
+        traceabilityPort.registerStatusChange(order, OrderStatus.PENDING, null);
         return order;
     }
 

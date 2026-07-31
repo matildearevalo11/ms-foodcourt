@@ -34,6 +34,7 @@ public enum ExceptionMessages {
     AUTHENTICATED_USER_NOT_FOUND("SEC-003", "Authenticated user not found"),
     INVALID_AUTHENTICATED_USER_ID("SEC-004", "Invalid authenticated user identifier"),
     EMPLOYEE_RESTAURANT_NOT_ASSIGNED("SEC-005", "Authenticated employee has no restaurant assigned"),
+    AUTHENTICATED_EMPLOYEE_NAME_NOT_FOUND("SEC-006", "Authenticated employee name not found"),
 
     ;
 

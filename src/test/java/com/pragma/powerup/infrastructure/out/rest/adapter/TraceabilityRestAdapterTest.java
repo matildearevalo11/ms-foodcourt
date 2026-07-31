@@ -3,6 +3,7 @@ package com.pragma.powerup.infrastructure.out.rest.adapter;
 import com.pragma.powerup.domain.enums.OrderStatus;
 import com.pragma.powerup.domain.exception.ExternalServiceException;
 import com.pragma.powerup.domain.model.Order;
+import com.pragma.powerup.domain.model.Employee;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -23,9 +24,11 @@ class TraceabilityRestAdapterTest {
                 .andExpect(method(org.springframework.http.HttpMethod.POST))
                 .andExpect(jsonPath("$.orderId").value(25))
                 .andExpect(jsonPath("$.newStatus").value("PENDING"))
+                .andExpect(jsonPath("$.employee.id").value(8))
+                .andExpect(jsonPath("$.employee.fullName").value("Ana Gómez"))
                 .andRespond(withSuccess());
 
-        adapter.registerStatusChange(order(), null);
+        adapter.registerStatusChange(order(), null, new Employee(8L, "Ana Gómez"));
 
         server.verify();
     }
@@ -39,7 +42,7 @@ class TraceabilityRestAdapterTest {
                 .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
 
         assertThrows(ExternalServiceException.class,
-                () -> adapter.registerStatusChange(order(), null));
+                () -> adapter.registerStatusChange(order(), null, null));
     }
 
     private Order order() {
