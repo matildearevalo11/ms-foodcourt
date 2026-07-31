@@ -74,4 +74,18 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
             return order;
         });
     }
+
+    @Override
+    public Optional<Order> markOrderReady(Long orderId, Long restaurantId, Long employeeId, String securityPin) {
+        int updatedOrders = orderRepository.markReadyIfAssigned(orderId, restaurantId, employeeId, securityPin,
+                OrderStatus.IN_PREPARATION, OrderStatus.READY);
+        if (updatedOrders == 0) {
+            return Optional.empty();
+        }
+        return orderRepository.findById(orderId).map(entity -> {
+            Order order = orderMapper.toOrder(entity);
+            order.setItems(orderItemMapper.toOrderItems(orderItemRepository.findByOrder_IdIn(List.of(orderId))));
+            return order;
+        });
+    }
 }

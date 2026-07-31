@@ -27,6 +27,9 @@ public enum ExceptionMessages {
     INVALID_AUTHENTICATED_USER_ID("Invalid authenticated user identifier"),
     EMPLOYEE_RESTAURANT_NOT_ASSIGNED("Authenticated employee has no restaurant assigned"),
     ORDER_NOT_AVAILABLE_FOR_ASSIGNMENT("Order is not pending, is already assigned, or belongs to another restaurant"),
+    ORDER_NOT_AVAILABLE_TO_MARK_READY("Order is not in preparation, is not assigned to the employee, or belongs to another restaurant"),
+    CUSTOMER_CONTACT_UNAVAILABLE("Customer contact information is unavailable"),
+    MESSAGING_SERVICE_UNAVAILABLE("Messaging service is unavailable"),
 
     ;
 

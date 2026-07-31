@@ -12,6 +12,9 @@ import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.spi.ITraceabilityPort;
+import com.pragma.powerup.domain.spi.IPinGeneratorPort;
+import com.pragma.powerup.domain.spi.IUserContactPort;
+import com.pragma.powerup.domain.spi.INotificationPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +32,9 @@ class OrderUseCaseTest {
     private ILoggedUserPort loggedUserPort;
     private OrderUseCase useCase;
     private ITraceabilityPort traceabilityPort;
+    private IPinGeneratorPort pinGeneratorPort;
+    private IUserContactPort userContactPort;
+    private INotificationPort notificationPort;
 
     @BeforeEach
     void setUp() {
@@ -37,9 +43,13 @@ class OrderUseCaseTest {
         restaurantPersistencePort = mock(IRestaurantPersistencePort.class);
         loggedUserPort = mock(ILoggedUserPort.class);
         traceabilityPort = mock(ITraceabilityPort.class);
+        pinGeneratorPort = mock(IPinGeneratorPort.class);
+        userContactPort = mock(IUserContactPort.class);
+        notificationPort = mock(INotificationPort.class);
         when(loggedUserPort.getLoggedUserId()).thenReturn(20L);
         useCase = new OrderUseCase(orderPersistencePort, dishPersistencePort,
-                restaurantPersistencePort, loggedUserPort, traceabilityPort);
+                restaurantPersistencePort, loggedUserPort, traceabilityPort,
+                pinGeneratorPort, userContactPort, notificationPort);
     }
 
     @Test
@@ -155,6 +165,35 @@ class OrderUseCaseTest {
 
         assertThrows(ValidationException.class, () -> useCase.assignOrder(25L));
         verifyNoInteractions(traceabilityPort);
+    }
+
+    @Test
+    void markOrderReady_ShouldGeneratePinNotifyCustomerAndRegisterTraceability() {
+        Order readyOrder = validOrder();
+        readyOrder.setId(25L);
+        readyOrder.setCustomerId(20L);
+        readyOrder.setAssignedEmployeeId(30L);
+        readyOrder.setStatus(OrderStatus.READY);
+        when(loggedUserPort.getLoggedUserId()).thenReturn(30L);
+        when(loggedUserPort.getLoggedRestaurantId()).thenReturn(5L);
+        when(pinGeneratorPort.generatePin()).thenReturn("482913");
+        when(orderPersistencePort.markOrderReady(25L, 5L, 30L, "482913"))
+                .thenReturn(Optional.of(readyOrder));
+        when(userContactPort.getCellphone(20L)).thenReturn("+573001234567");
+
+        assertSame(readyOrder, useCase.markOrderReady(25L));
+        verify(traceabilityPort).registerStatusChange(readyOrder, OrderStatus.IN_PREPARATION);
+        verify(notificationPort).notifyOrderReady("+573001234567", "482913");
+    }
+
+    @Test
+    void markOrderReady_WhenOrderIsUnavailable_ShouldNotNotify() {
+        when(loggedUserPort.getLoggedUserId()).thenReturn(30L);
+        when(loggedUserPort.getLoggedRestaurantId()).thenReturn(5L);
+        when(pinGeneratorPort.generatePin()).thenReturn("482913");
+
+        assertThrows(ValidationException.class, () -> useCase.markOrderReady(25L));
+        verifyNoInteractions(userContactPort, notificationPort);
     }
 
     private Order validOrder() {

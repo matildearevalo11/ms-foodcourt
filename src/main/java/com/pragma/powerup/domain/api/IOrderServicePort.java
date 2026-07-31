@@ -8,4 +8,5 @@ public interface IOrderServicePort {
     Order saveOrder(Order order);
     PageResult<Order> getOrders(OrderStatus status, int page, int size);
     Order assignOrder(Long orderId);
+    Order markOrderReady(Long orderId);
 }

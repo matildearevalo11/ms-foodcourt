@@ -27,4 +27,17 @@ public interface IOrderRepository extends JpaRepository<OrderEntity, Long> {
             """)
     int assignIfAvailable(@Param("orderId") Long orderId, @Param("restaurantId") Long restaurantId, @Param("employeeId") Long employeeId,
                           @Param("expectedStatus") OrderStatus expectedStatus, @Param("newStatus") OrderStatus newStatus);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            UPDATE OrderEntity o
+            SET o.securityPin = :securityPin, o.status = :newStatus
+            WHERE o.id = :orderId
+              AND o.restaurant.id = :restaurantId
+              AND o.assignedEmployeeId = :employeeId
+              AND o.status = :expectedStatus
+            """)
+    int markReadyIfAssigned(@Param("orderId") Long orderId, @Param("restaurantId") Long restaurantId,
+                            @Param("employeeId") Long employeeId, @Param("securityPin") String securityPin,
+                            @Param("expectedStatus") OrderStatus expectedStatus, @Param("newStatus") OrderStatus newStatus);
 }

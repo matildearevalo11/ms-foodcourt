@@ -14,6 +14,9 @@ import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.spi.ITraceabilityPort;
+import com.pragma.powerup.domain.spi.IPinGeneratorPort;
+import com.pragma.powerup.domain.spi.IUserContactPort;
+import com.pragma.powerup.domain.spi.INotificationPort;
 import lombok.RequiredArgsConstructor;
 import java.time.Instant;
 import java.util.HashSet;
@@ -28,6 +31,9 @@ public class OrderUseCase implements IOrderServicePort {
     private final IRestaurantPersistencePort restaurantPersistencePort;
     private final ILoggedUserPort loggedUserPort;
     private final ITraceabilityPort traceabilityPort;
+    private final IPinGeneratorPort pinGeneratorPort;
+    private final IUserContactPort userContactPort;
+    private final INotificationPort notificationPort;
 
     @Override
     public Order saveOrder(Order order) {
@@ -58,6 +64,19 @@ public class OrderUseCase implements IOrderServicePort {
                 .orElseThrow(() -> new ValidationException(
                         ExceptionMessages.ORDER_NOT_AVAILABLE_FOR_ASSIGNMENT.getMessage()));
         traceabilityPort.registerStatusChange(order, OrderStatus.PENDING);
+        return order;
+    }
+
+    @Override
+    public Order markOrderReady(Long orderId) {
+        String securityPin = pinGeneratorPort.generatePin();
+        Order order = orderPersistencePort.markOrderReady(orderId, loggedUserPort.getLoggedRestaurantId(),
+                        loggedUserPort.getLoggedUserId(), securityPin)
+                .orElseThrow(() -> new ValidationException(
+                        ExceptionMessages.ORDER_NOT_AVAILABLE_TO_MARK_READY.getMessage()));
+        String cellphone = userContactPort.getCellphone(order.getCustomerId());
+        traceabilityPort.registerStatusChange(order, OrderStatus.IN_PREPARATION);
+        notificationPort.notifyOrderReady(cellphone, securityPin);
         return order;
     }
 

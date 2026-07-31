@@ -9,6 +9,9 @@ import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.domain.spi.ITraceabilityPort;
+import com.pragma.powerup.domain.spi.IPinGeneratorPort;
+import com.pragma.powerup.domain.spi.IUserContactPort;
+import com.pragma.powerup.domain.spi.INotificationPort;
 import com.pragma.powerup.domain.usecase.DishUseCase;
 import com.pragma.powerup.domain.usecase.RestaurantUseCase;
 import com.pragma.powerup.domain.usecase.OrderUseCase;
@@ -26,12 +29,16 @@ import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderRepository;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderItemRepository;
 import com.pragma.powerup.infrastructure.out.rest.adapter.UserServiceRestAdapter;
 import com.pragma.powerup.infrastructure.out.rest.adapter.TraceabilityRestAdapter;
+import com.pragma.powerup.infrastructure.out.rest.adapter.UserContactRestAdapter;
+import com.pragma.powerup.infrastructure.out.rest.adapter.NotificationRestAdapter;
+import com.pragma.powerup.infrastructure.out.security.SecurePinGeneratorAdapter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.client.RestClient;
+import java.security.SecureRandom;
 
 @Configuration
 public class BeanConfiguration {
@@ -61,6 +68,11 @@ public class BeanConfiguration {
     }
 
     @Bean
+    public IUserContactPort userContactPort(RestClient usersRestClient) {
+        return new UserContactRestAdapter(usersRestClient);
+    }
+
+    @Bean
     public RestClient traceabilityRestClient(RestClient.Builder builder,
                                              @Value("${clients.traceability.base-url}") String baseUrl) {
         return builder.baseUrl(baseUrl)
@@ -77,6 +89,30 @@ public class BeanConfiguration {
     @Bean
     public ITraceabilityPort traceabilityPort(RestClient traceabilityRestClient) {
         return new TraceabilityRestAdapter(traceabilityRestClient);
+    }
+
+    @Bean
+    public RestClient messagingRestClient(RestClient.Builder builder,
+                                          @Value("${clients.messaging.base-url}") String baseUrl) {
+        return builder.baseUrl(baseUrl)
+                .requestInterceptor((request, body, execution) -> {
+                    if (SecurityContextHolder.getContext().getAuthentication() != null
+                            && SecurityContextHolder.getContext().getAuthentication().getPrincipal() instanceof Jwt jwt) {
+                        request.getHeaders().setBearerAuth(jwt.getTokenValue());
+                    }
+                    return execution.execute(request, body);
+                })
+                .build();
+    }
+
+    @Bean
+    public INotificationPort notificationPort(RestClient messagingRestClient) {
+        return new NotificationRestAdapter(messagingRestClient);
+    }
+
+    @Bean
+    public IPinGeneratorPort pinGeneratorPort() {
+        return new SecurePinGeneratorAdapter(new SecureRandom());
     }
 
     @Bean
@@ -108,8 +144,10 @@ public class BeanConfiguration {
     @Bean
     public IOrderServicePort orderServicePort(IOrderPersistencePort orderPersistencePort, IDishPersistencePort dishPersistencePort,
                                                IRestaurantPersistencePort restaurantPersistencePort, ILoggedUserPort loggedUserPort,
-                                               ITraceabilityPort traceabilityPort) {
-        return new OrderUseCase(orderPersistencePort, dishPersistencePort, restaurantPersistencePort, loggedUserPort, traceabilityPort);
+                                               ITraceabilityPort traceabilityPort, IPinGeneratorPort pinGeneratorPort,
+                                               IUserContactPort userContactPort, INotificationPort notificationPort) {
+        return new OrderUseCase(orderPersistencePort, dishPersistencePort, restaurantPersistencePort, loggedUserPort,
+                traceabilityPort, pinGeneratorPort, userContactPort, notificationPort);
     }
 
 }

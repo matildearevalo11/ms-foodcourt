@@ -35,6 +35,9 @@ public class OrderEntity {
     @Column(name = "assigned_employee_id")
     private Long assignedEmployeeId;
 
+    @Column(name = "security_pin", length = 6)
+    private String securityPin;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status;

@@ -9,6 +9,7 @@ import org.mapstruct.Mapping;
 public interface IOrderEntityMapper {
 
     @Mapping(target = "restaurant.id", source = "restaurantId")
+    @Mapping(target = "securityPin", ignore = true)
     OrderEntity toEntity(Order order);
 
     @Mapping(target = "restaurantId", source = "restaurant.id")

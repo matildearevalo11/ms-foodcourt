@@ -10,4 +10,5 @@ public interface IOrderHandler {
     OrderResponseDto saveOrder(OrderRequestDto requestDto);
     PageResponseDto<OrderResponseDto> getOrders(OrderFilterRequestDto requestDto);
     OrderResponseDto assignOrder(Long orderId);
+    OrderResponseDto markOrderReady(Long orderId);
 }

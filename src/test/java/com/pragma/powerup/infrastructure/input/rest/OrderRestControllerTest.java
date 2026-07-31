@@ -133,6 +133,26 @@ class OrderRestControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void markOrderReady_AsEmployee_ShouldReturnReadyOrder() throws Exception {
+        OrderResponseDto response = new OrderResponseDto();
+        response.setId(25L);
+        response.setAssignedEmployeeId(30L);
+        response.setStatus(OrderStatus.READY);
+        when(handler.markOrderReady(25L)).thenReturn(response);
+
+        mockMvc.perform(patch("/orders/25/ready").with(employeeJwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(25))
+                .andExpect(jsonPath("$.data.status").value("READY"));
+    }
+
+    @Test
+    void markOrderReady_AsCustomer_ShouldReturnForbidden() throws Exception {
+        mockMvc.perform(patch("/orders/25/ready").with(customerJwt()))
+                .andExpect(status().isForbidden());
+    }
+
     private OrderRequestDto validRequest() {
         OrderItemRequestDto item = new OrderItemRequestDto();
         item.setDishId(10L);

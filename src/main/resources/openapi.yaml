@@ -75,6 +75,26 @@ paths:
         '401': { description: Authentication required }
         '403': { description: EMPLOYEE role required }
         '503': { description: Traceability service unavailable }
+  /orders/{orderId}/ready:
+    patch:
+      tags: [orders]
+      summary: Mark an assigned order as ready and notify the customer by SMS
+      operationId: markOrderReady
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '200':
+          description: Order moved to READY and customer notified
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponseEnvelope' }
+        '400': { description: Order is unavailable or not assigned to the authenticated employee }
+        '401': { description: Authentication required }
+        '403': { description: EMPLOYEE role required }
+        '503': { description: Users, traceability, or messaging service unavailable }
   /restaurants:
     get:
       tags: [restaurants]
