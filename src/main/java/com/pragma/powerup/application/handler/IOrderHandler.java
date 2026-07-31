@@ -13,4 +13,5 @@ public interface IOrderHandler {
     OrderResponseDto assignOrder(Long orderId);
     OrderResponseDto markOrderReady(Long orderId);
     OrderResponseDto deliverOrder(Long orderId, OrderDeliveryRequestDto requestDto);
+    OrderResponseDto cancelOrder(Long orderId);
 }

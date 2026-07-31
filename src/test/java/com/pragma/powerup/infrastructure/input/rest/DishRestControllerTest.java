@@ -123,7 +123,8 @@ class DishRestControllerTest {
     void createDish_WithoutAuthentication_ShouldReturnUnauthorized() throws Exception {
         mockMvc.perform(post("/restaurants/5/dishes").contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest())))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.errors.code").value("SEC-001"));
     }
 
     @Test

@@ -55,4 +55,15 @@ public interface IOrderRepository extends JpaRepository<OrderEntity, Long> {
                                     @Param("employeeId") Long employeeId, @Param("securityPin") String securityPin,
                                     @Param("expectedStatus") OrderStatus expectedStatus,
                                     @Param("newStatus") OrderStatus newStatus);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            UPDATE OrderEntity o
+            SET o.status = :newStatus
+            WHERE o.id = :orderId
+              AND o.customerId = :customerId
+              AND o.status = :expectedStatus
+            """)
+    int cancelIfPending(@Param("orderId") Long orderId, @Param("customerId") Long customerId,
+                        @Param("expectedStatus") OrderStatus expectedStatus, @Param("newStatus") OrderStatus newStatus);
 }

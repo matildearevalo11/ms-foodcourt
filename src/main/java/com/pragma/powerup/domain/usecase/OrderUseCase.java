@@ -90,6 +90,15 @@ public class OrderUseCase implements IOrderServicePort {
         return order;
     }
 
+    @Override
+    public Order cancelOrder(Long orderId) {
+        Order order = orderPersistencePort.cancelPendingOrder(orderId, loggedUserPort.getLoggedUserId())
+                .orElseThrow(() -> new ValidationException(
+                        ExceptionMessages.ORDER_CANNOT_BE_CANCELED.getMessage()));
+        traceabilityPort.registerStatusChange(order, OrderStatus.PENDING);
+        return order;
+    }
+
     private void validateRestaurant(Long restaurantId) {
         if (!restaurantPersistencePort.existsById(restaurantId)) {
             throw new NotFoundException(ExceptionMessages.RESTAURANT_NOT_FOUND.getMessage());

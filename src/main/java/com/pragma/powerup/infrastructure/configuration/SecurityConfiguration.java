@@ -1,5 +1,6 @@
 package com.pragma.powerup.infrastructure.configuration;
 
+import com.pragma.powerup.domain.exception.ExceptionMessages;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +15,8 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.io.IOException;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 public class SecurityConfiguration {
@@ -26,6 +29,13 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/openapi.yaml", "/swagger-ui.html", "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated())
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint((request, response, exception) ->
+                                writeError(response, HttpServletResponse.SC_UNAUTHORIZED,
+                                        ExceptionMessages.AUTHENTICATION_REQUIRED.getCode(), ExceptionMessages.AUTHENTICATION_REQUIRED.getMessage()))
+                        .accessDeniedHandler((request, response, exception) ->
+                                writeError(response, HttpServletResponse.SC_FORBIDDEN,
+                                        ExceptionMessages.ACCESS_DENIED.getCode(), ExceptionMessages.ACCESS_DENIED.getMessage())))
                 .oauth2ResourceServer(resource -> resource.jwt(jwt ->
                         jwt.jwtAuthenticationConverter(converter)))
                 .build();
@@ -48,5 +58,13 @@ public class SecurityConfiguration {
         return NimbusJwtDecoder.withSecretKey(secretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
+    }
+
+    private static void writeError(HttpServletResponse response, int status, String code, String message)
+            throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.getWriter().write("{\"errors\":{\"code\":\"" + code
+                + "\",\"message\":\"" + message + "\"}}");
     }
 }

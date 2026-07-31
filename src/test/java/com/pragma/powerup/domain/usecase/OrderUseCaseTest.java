@@ -220,6 +220,26 @@ class OrderUseCaseTest {
         verifyNoInteractions(traceabilityPort);
     }
 
+    @Test
+    void cancelOrder_WhenPendingAndOwnedByCustomer_ShouldCancelAndRegisterTraceability() {
+        Order canceledOrder = validOrder();
+        canceledOrder.setId(25L);
+        canceledOrder.setCustomerId(20L);
+        canceledOrder.setStatus(OrderStatus.CANCELED);
+        when(orderPersistencePort.cancelPendingOrder(25L, 20L)).thenReturn(Optional.of(canceledOrder));
+
+        assertSame(canceledOrder, useCase.cancelOrder(25L));
+        verify(traceabilityPort).registerStatusChange(canceledOrder, OrderStatus.PENDING);
+    }
+
+    @Test
+    void cancelOrder_WhenNotPendingOrNotOwnedByCustomer_ShouldFailWithRequiredMessage() {
+        ValidationException exception = assertThrows(ValidationException.class, () -> useCase.cancelOrder(25L));
+
+        assertEquals("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse", exception.getMessage());
+        verifyNoInteractions(traceabilityPort);
+    }
+
     private Order validOrder() {
         return new Order(null, null, 5L, null, null, null,
                 List.of(new OrderItem(null, 10L, 2), new OrderItem(null, 11L, 1)));

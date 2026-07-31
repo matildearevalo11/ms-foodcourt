@@ -91,6 +91,16 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
         return findOrderWithItems(orderId);
     }
 
+    @Override
+    public Optional<Order> cancelPendingOrder(Long orderId, Long customerId) {
+        int updatedOrders = orderRepository.cancelIfPending(orderId, customerId,
+                OrderStatus.PENDING, OrderStatus.CANCELED);
+        if (updatedOrders == 0) {
+            return Optional.empty();
+        }
+        return findOrderWithItems(orderId);
+    }
+
     private Optional<Order> findOrderWithItems(Long orderId) {
         return orderRepository.findById(orderId).map(entity -> {
             Order order = orderMapper.toOrder(entity);

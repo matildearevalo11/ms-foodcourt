@@ -1,5 +1,6 @@
 package com.pragma.powerup.infrastructure.security;
 
+import com.pragma.powerup.domain.exception.ExceptionMessages;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.access.AccessDeniedException;
@@ -30,7 +31,7 @@ public class RoleAuthorizationInterceptor implements HandlerInterceptor {
         String authority = ROLE_PREFIX + requiredRole.value().getName();
         if (authentication == null || authentication.getAuthorities().stream()
                 .noneMatch(grantedAuthority -> authority.equals(grantedAuthority.getAuthority()))) {
-            throw new AccessDeniedException("Access denied");
+            throw new AccessDeniedException(ExceptionMessages.ACCESS_DENIED.getMessage());
         }
         return true;
     }

@@ -120,6 +120,26 @@ paths:
         '401': { description: Authentication required }
         '403': { description: EMPLOYEE role required }
         '503': { description: Traceability service unavailable }
+  /orders/{orderId}/cancellation:
+    patch:
+      tags: [orders]
+      summary: Cancel the authenticated customer's pending order
+      operationId: cancelOrder
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      responses:
+        '200':
+          description: Order canceled successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponseEnvelope' }
+        '400': { description: Order is no longer pending and cannot be canceled }
+        '401': { description: Authentication required }
+        '403': { description: CUSTOMER role required }
+        '503': { description: Traceability service unavailable }
   /restaurants:
     get:
       tags: [restaurants]
@@ -289,6 +309,17 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: object
+          required: [code]
+          properties:
+            code: { type: string, example: VAL-001 }
+            message: { type: string, example: Invalid request }
+          additionalProperties:
+            type: string
     RestaurantRequest:
       type: object
       required: [name, nit, address, phone, urlLogo, ownerId]

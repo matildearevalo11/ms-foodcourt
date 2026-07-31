@@ -174,4 +174,34 @@ class OrderJpaAdapterTest {
         assertTrue(adapter.deliverReadyOrder(25L, 5L, 30L, "000000").isEmpty());
         verify(orderRepository, never()).findById(anyLong());
     }
+
+    @Test
+    void cancelPendingOrder_WhenOwnedByCustomer_ShouldReturnCanceledOrder() {
+        IOrderRepository orderRepository = mock(IOrderRepository.class);
+        IOrderItemRepository itemRepository = mock(IOrderItemRepository.class);
+        IOrderEntityMapper orderMapper = mock(IOrderEntityMapper.class);
+        IOrderItemEntityMapper itemMapper = mock(IOrderItemEntityMapper.class);
+        OrderJpaAdapter adapter = new OrderJpaAdapter(orderRepository, itemRepository, orderMapper, itemMapper);
+        OrderEntity entity = new OrderEntity();
+        entity.setId(25L);
+        Order order = new Order();
+        when(orderRepository.cancelIfPending(25L, 20L, OrderStatus.PENDING, OrderStatus.CANCELED))
+                .thenReturn(1);
+        when(orderRepository.findById(25L)).thenReturn(java.util.Optional.of(entity));
+        when(itemRepository.findByOrder_IdIn(List.of(25L))).thenReturn(List.of());
+        when(orderMapper.toOrder(entity)).thenReturn(order);
+        when(itemMapper.toOrderItems(List.of())).thenReturn(List.of());
+
+        assertTrue(adapter.cancelPendingOrder(25L, 20L).isPresent());
+    }
+
+    @Test
+    void cancelPendingOrder_WhenUnavailable_ShouldReturnEmpty() {
+        IOrderRepository orderRepository = mock(IOrderRepository.class);
+        OrderJpaAdapter adapter = new OrderJpaAdapter(orderRepository, mock(IOrderItemRepository.class),
+                mock(IOrderEntityMapper.class), mock(IOrderItemEntityMapper.class));
+
+        assertTrue(adapter.cancelPendingOrder(25L, 20L).isEmpty());
+        verify(orderRepository, never()).findById(anyLong());
+    }
 }

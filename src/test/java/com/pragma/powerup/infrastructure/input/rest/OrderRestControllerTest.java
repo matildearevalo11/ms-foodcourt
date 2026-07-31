@@ -9,6 +9,8 @@ import com.pragma.powerup.application.dto.response.PageMetadataDto;
 import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.handler.IOrderHandler;
 import com.pragma.powerup.domain.enums.OrderStatus;
+import com.pragma.powerup.domain.exception.ExceptionMessages;
+import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.infrastructure.configuration.SecurityConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -188,6 +190,38 @@ class OrderRestControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"securityPin\":\"482913\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void cancelOrder_AsCustomer_ShouldReturnCanceledOrder() throws Exception {
+        OrderResponseDto response = new OrderResponseDto();
+        response.setId(25L);
+        response.setCustomerId(20L);
+        response.setStatus(OrderStatus.CANCELED);
+        when(handler.cancelOrder(25L)).thenReturn(response);
+
+        mockMvc.perform(patch("/orders/25/cancellation").with(customerJwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(25))
+                .andExpect(jsonPath("$.data.status").value("CANCELED"));
+    }
+
+    @Test
+    void cancelOrder_AsEmployee_ShouldReturnForbidden() throws Exception {
+        mockMvc.perform(patch("/orders/25/cancellation").with(employeeJwt()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void cancelOrder_WhenNoLongerPending_ShouldReturnStableErrorCode() throws Exception {
+        when(handler.cancelOrder(25L)).thenThrow(new ValidationException(
+                ExceptionMessages.ORDER_CANNOT_BE_CANCELED.getMessage()));
+
+        mockMvc.perform(patch("/orders/25/cancellation").with(customerJwt()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.code").value("FC-026"))
+                .andExpect(jsonPath("$.errors.message").value(
+                        "Lo sentimos, tu pedido ya está en preparación y no puede cancelarse"));
     }
 
     private OrderRequestDto validRequest() {
