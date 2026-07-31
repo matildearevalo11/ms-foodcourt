@@ -12,4 +12,5 @@ public interface IOrderPersistencePort {
     PageResult<Order> findByRestaurantIdAndStatus(Long restaurantId, OrderStatus status, int page, int size);
     Optional<Order> assignPendingOrder(Long orderId, Long restaurantId, Long employeeId);
     Optional<Order> markOrderReady(Long orderId, Long restaurantId, Long employeeId, String securityPin);
+    Optional<Order> deliverReadyOrder(Long orderId, Long restaurantId, Long employeeId, String securityPin);
 }

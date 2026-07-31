@@ -30,6 +30,7 @@ public enum ExceptionMessages {
     ORDER_NOT_AVAILABLE_TO_MARK_READY("Order is not in preparation, is not assigned to the employee, or belongs to another restaurant"),
     CUSTOMER_CONTACT_UNAVAILABLE("Customer contact information is unavailable"),
     MESSAGING_SERVICE_UNAVAILABLE("Messaging service is unavailable"),
+    ORDER_NOT_AVAILABLE_FOR_DELIVERY("Order is not ready, the security PIN is invalid, or the order is not assigned to the employee"),
 
     ;
 

@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -150,6 +151,42 @@ class OrderRestControllerTest {
     @Test
     void markOrderReady_AsCustomer_ShouldReturnForbidden() throws Exception {
         mockMvc.perform(patch("/orders/25/ready").with(customerJwt()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void deliverOrder_AsEmployeeWithValidPin_ShouldReturnDeliveredOrder() throws Exception {
+        OrderResponseDto response = new OrderResponseDto();
+        response.setId(25L);
+        response.setAssignedEmployeeId(30L);
+        response.setStatus(OrderStatus.DELIVERED);
+        when(handler.deliverOrder(eq(25L), any())).thenReturn(response);
+
+        mockMvc.perform(patch("/orders/25/delivery")
+                        .with(employeeJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"securityPin\":\"482913\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.id").value(25))
+                .andExpect(jsonPath("$.data.status").value("DELIVERED"));
+    }
+
+    @Test
+    void deliverOrder_WithInvalidPinFormat_ShouldReturnBadRequest() throws Exception {
+        mockMvc.perform(patch("/orders/25/delivery")
+                        .with(employeeJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"securityPin\":\"123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.securityPin").value("Security PIN must contain 6 digits"));
+    }
+
+    @Test
+    void deliverOrder_AsCustomer_ShouldReturnForbidden() throws Exception {
+        mockMvc.perform(patch("/orders/25/delivery")
+                        .with(customerJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"securityPin\":\"482913\"}"))
                 .andExpect(status().isForbidden());
     }
 

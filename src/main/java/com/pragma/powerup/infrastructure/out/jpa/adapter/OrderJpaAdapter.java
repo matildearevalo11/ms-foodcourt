@@ -68,11 +68,7 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
         if (updatedOrders == 0) {
             return Optional.empty();
         }
-        return orderRepository.findById(orderId).map(entity -> {
-            Order order = orderMapper.toOrder(entity);
-            order.setItems(orderItemMapper.toOrderItems(orderItemRepository.findByOrder_IdIn(List.of(orderId))));
-            return order;
-        });
+        return findOrderWithItems(orderId);
     }
 
     @Override
@@ -82,6 +78,20 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
         if (updatedOrders == 0) {
             return Optional.empty();
         }
+        return findOrderWithItems(orderId);
+    }
+
+    @Override
+    public Optional<Order> deliverReadyOrder(Long orderId, Long restaurantId, Long employeeId, String securityPin) {
+        int updatedOrders = orderRepository.deliverIfReadyAndPinMatches(orderId, restaurantId, employeeId, securityPin,
+                OrderStatus.READY, OrderStatus.DELIVERED);
+        if (updatedOrders == 0) {
+            return Optional.empty();
+        }
+        return findOrderWithItems(orderId);
+    }
+
+    private Optional<Order> findOrderWithItems(Long orderId) {
         return orderRepository.findById(orderId).map(entity -> {
             Order order = orderMapper.toOrder(entity);
             order.setItems(orderItemMapper.toOrderItems(orderItemRepository.findByOrder_IdIn(List.of(orderId))));

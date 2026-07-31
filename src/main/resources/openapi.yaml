@@ -95,6 +95,31 @@ paths:
         '401': { description: Authentication required }
         '403': { description: EMPLOYEE role required }
         '503': { description: Users, traceability, or messaging service unavailable }
+  /orders/{orderId}/delivery:
+    patch:
+      tags: [orders]
+      summary: Deliver a ready order after validating its security PIN
+      operationId: deliverOrder
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema: { type: integer, format: int64, minimum: 1 }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OrderDeliveryRequest' }
+      responses:
+        '200':
+          description: Order delivered successfully
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderResponseEnvelope' }
+        '400': { description: Order is not ready, PIN is invalid, or employee is not assigned }
+        '401': { description: Authentication required }
+        '403': { description: EMPLOYEE role required }
+        '503': { description: Traceability service unavailable }
   /restaurants:
     get:
       tags: [restaurants]
@@ -367,6 +392,11 @@ components:
           type: array
           minItems: 1
           items: { $ref: '#/components/schemas/OrderItemRequest' }
+    OrderDeliveryRequest:
+      type: object
+      required: [securityPin]
+      properties:
+        securityPin: { type: string, pattern: '^[0-9]{6}$', example: '482913' }
     OrderResponse:
       allOf:
         - $ref: '#/components/schemas/OrderRequest'

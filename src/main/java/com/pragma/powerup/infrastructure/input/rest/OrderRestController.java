@@ -2,6 +2,7 @@ package com.pragma.powerup.infrastructure.input.rest;
 
 import com.pragma.powerup.application.dto.request.OrderRequestDto;
 import com.pragma.powerup.application.dto.request.OrderFilterRequestDto;
+import com.pragma.powerup.application.dto.request.OrderDeliveryRequestDto;
 import com.pragma.powerup.application.dto.response.OrderResponseDto;
 import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.handler.IOrderHandler;
@@ -50,5 +51,12 @@ public class OrderRestController {
     @RequireRole(RoleEnum.EMPLOYEE)
     public DefaultResponse<OrderResponseDto> markOrderReady(@PathVariable Long orderId) {
         return new DefaultResponse<>(orderHandler.markOrderReady(orderId));
+    }
+
+    @PatchMapping(value = "/{orderId}/delivery", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.EMPLOYEE)
+    public DefaultResponse<OrderResponseDto> deliverOrder(@PathVariable Long orderId,
+                                                           @Valid @RequestBody OrderDeliveryRequestDto requestDto) {
+        return new DefaultResponse<>(orderHandler.deliverOrder(orderId, requestDto));
     }
 }

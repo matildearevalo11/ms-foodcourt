@@ -9,4 +9,5 @@ public interface IOrderServicePort {
     PageResult<Order> getOrders(OrderStatus status, int page, int size);
     Order assignOrder(Long orderId);
     Order markOrderReady(Long orderId);
+    Order deliverOrder(Long orderId, String securityPin);
 }

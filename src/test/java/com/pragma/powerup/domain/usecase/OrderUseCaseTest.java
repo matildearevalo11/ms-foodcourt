@@ -196,6 +196,30 @@ class OrderUseCaseTest {
         verifyNoInteractions(userContactPort, notificationPort);
     }
 
+    @Test
+    void deliverOrder_WithValidPin_ShouldMarkDeliveredAndRegisterTraceability() {
+        Order deliveredOrder = validOrder();
+        deliveredOrder.setId(25L);
+        deliveredOrder.setAssignedEmployeeId(30L);
+        deliveredOrder.setStatus(OrderStatus.DELIVERED);
+        when(loggedUserPort.getLoggedUserId()).thenReturn(30L);
+        when(loggedUserPort.getLoggedRestaurantId()).thenReturn(5L);
+        when(orderPersistencePort.deliverReadyOrder(25L, 5L, 30L, "482913"))
+                .thenReturn(Optional.of(deliveredOrder));
+
+        assertSame(deliveredOrder, useCase.deliverOrder(25L, "482913"));
+        verify(traceabilityPort).registerStatusChange(deliveredOrder, OrderStatus.READY);
+    }
+
+    @Test
+    void deliverOrder_WithInvalidStateEmployeeOrPin_ShouldFailWithoutTraceability() {
+        when(loggedUserPort.getLoggedUserId()).thenReturn(30L);
+        when(loggedUserPort.getLoggedRestaurantId()).thenReturn(5L);
+
+        assertThrows(ValidationException.class, () -> useCase.deliverOrder(25L, "000000"));
+        verifyNoInteractions(traceabilityPort);
+    }
+
     private Order validOrder() {
         return new Order(null, null, 5L, null, null, null,
                 List.of(new OrderItem(null, 10L, 2), new OrderItem(null, 11L, 1)));

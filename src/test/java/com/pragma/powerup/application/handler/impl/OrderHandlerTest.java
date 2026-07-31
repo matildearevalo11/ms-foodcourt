@@ -2,6 +2,7 @@ package com.pragma.powerup.application.handler.impl;
 
 import com.pragma.powerup.application.dto.request.OrderRequestDto;
 import com.pragma.powerup.application.dto.request.OrderFilterRequestDto;
+import com.pragma.powerup.application.dto.request.OrderDeliveryRequestDto;
 import com.pragma.powerup.application.dto.response.OrderResponseDto;
 import com.pragma.powerup.application.mapper.IOrderRequestMapper;
 import com.pragma.powerup.application.mapper.IOrderResponseMapper;
@@ -78,5 +79,20 @@ class OrderHandlerTest {
         when(responseMapper.toResponse(order)).thenReturn(response);
 
         assertSame(response, handler.markOrderReady(25L));
+    }
+
+    @Test
+    void deliverOrder_ShouldDelegatePinAndMapResponse() {
+        IOrderServicePort service = mock(IOrderServicePort.class);
+        IOrderResponseMapper responseMapper = mock(IOrderResponseMapper.class);
+        OrderHandler handler = new OrderHandler(service, mock(IOrderRequestMapper.class), responseMapper);
+        OrderDeliveryRequestDto request = new OrderDeliveryRequestDto();
+        request.setSecurityPin("482913");
+        Order order = new Order();
+        OrderResponseDto response = new OrderResponseDto();
+        when(service.deliverOrder(25L, "482913")).thenReturn(order);
+        when(responseMapper.toResponse(order)).thenReturn(response);
+
+        assertSame(response, handler.deliverOrder(25L, request));
     }
 }

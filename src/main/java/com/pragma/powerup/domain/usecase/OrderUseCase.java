@@ -80,6 +80,16 @@ public class OrderUseCase implements IOrderServicePort {
         return order;
     }
 
+    @Override
+    public Order deliverOrder(Long orderId, String securityPin) {
+        Order order = orderPersistencePort.deliverReadyOrder(orderId, loggedUserPort.getLoggedRestaurantId(),
+                        loggedUserPort.getLoggedUserId(), securityPin)
+                .orElseThrow(() -> new ValidationException(
+                        ExceptionMessages.ORDER_NOT_AVAILABLE_FOR_DELIVERY.getMessage()));
+        traceabilityPort.registerStatusChange(order, OrderStatus.READY);
+        return order;
+    }
+
     private void validateRestaurant(Long restaurantId) {
         if (!restaurantPersistencePort.existsById(restaurantId)) {
             throw new NotFoundException(ExceptionMessages.RESTAURANT_NOT_FOUND.getMessage());

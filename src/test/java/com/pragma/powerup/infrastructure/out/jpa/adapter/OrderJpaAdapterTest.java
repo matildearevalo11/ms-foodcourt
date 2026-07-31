@@ -144,4 +144,34 @@ class OrderJpaAdapterTest {
 
         assertTrue(adapter.markOrderReady(25L, 5L, 30L, "482913").isEmpty());
     }
+
+    @Test
+    void deliverReadyOrder_WhenPinMatches_ShouldReturnDeliveredOrder() {
+        IOrderRepository orderRepository = mock(IOrderRepository.class);
+        IOrderItemRepository itemRepository = mock(IOrderItemRepository.class);
+        IOrderEntityMapper orderMapper = mock(IOrderEntityMapper.class);
+        IOrderItemEntityMapper itemMapper = mock(IOrderItemEntityMapper.class);
+        OrderJpaAdapter adapter = new OrderJpaAdapter(orderRepository, itemRepository, orderMapper, itemMapper);
+        OrderEntity entity = new OrderEntity();
+        entity.setId(25L);
+        Order order = new Order();
+        when(orderRepository.deliverIfReadyAndPinMatches(25L, 5L, 30L, "482913",
+                OrderStatus.READY, OrderStatus.DELIVERED)).thenReturn(1);
+        when(orderRepository.findById(25L)).thenReturn(java.util.Optional.of(entity));
+        when(itemRepository.findByOrder_IdIn(List.of(25L))).thenReturn(List.of());
+        when(orderMapper.toOrder(entity)).thenReturn(order);
+        when(itemMapper.toOrderItems(List.of())).thenReturn(List.of());
+
+        assertTrue(adapter.deliverReadyOrder(25L, 5L, 30L, "482913").isPresent());
+    }
+
+    @Test
+    void deliverReadyOrder_WhenPinDoesNotMatch_ShouldReturnEmpty() {
+        IOrderRepository orderRepository = mock(IOrderRepository.class);
+        OrderJpaAdapter adapter = new OrderJpaAdapter(orderRepository, mock(IOrderItemRepository.class),
+                mock(IOrderEntityMapper.class), mock(IOrderItemEntityMapper.class));
+
+        assertTrue(adapter.deliverReadyOrder(25L, 5L, 30L, "000000").isEmpty());
+        verify(orderRepository, never()).findById(anyLong());
+    }
 }
