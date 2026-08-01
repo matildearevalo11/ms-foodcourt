@@ -12,7 +12,7 @@ import lombok.Setter;
 @Setter
 public class RestaurantRequestDto {
     @NotBlank(message = "Name is required")
-    @Pattern(regexp = ".*[^0-9].*", message = "Restaurant name cannot contain only numbers")
+    @Pattern(regexp = "^\\d*\\D.*$", message = "Restaurant name cannot contain only numbers")
     private String name;
 
     @NotBlank(message = "NIT is required")

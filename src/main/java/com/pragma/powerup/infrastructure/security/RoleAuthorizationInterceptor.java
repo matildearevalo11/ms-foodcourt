@@ -16,16 +16,20 @@ public class RoleAuthorizationInterceptor implements HandlerInterceptor {
     private static final String ROLE_PREFIX = "ROLE_";
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        if (!(handler instanceof HandlerMethod handlerMethod)) {
-            return true;
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        if (handler instanceof HandlerMethod handlerMethod) {
+            authorize(handlerMethod);
         }
+        return HandlerInterceptor.super.preHandle(request, response, handler);
+    }
+
+    private void authorize(HandlerMethod handlerMethod) {
         RequireRole requiredRole = handlerMethod.getMethodAnnotation(RequireRole.class);
         if (requiredRole == null) {
             requiredRole = handlerMethod.getBeanType().getAnnotation(RequireRole.class);
         }
         if (requiredRole == null) {
-            return true;
+            return;
         }
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String authority = ROLE_PREFIX + requiredRole.value().getName();
@@ -33,6 +37,5 @@ public class RoleAuthorizationInterceptor implements HandlerInterceptor {
                 .noneMatch(grantedAuthority -> authority.equals(grantedAuthority.getAuthority()))) {
             throw new AccessDeniedException(ExceptionMessages.ACCESS_DENIED.getMessage());
         }
-        return true;
     }
 }

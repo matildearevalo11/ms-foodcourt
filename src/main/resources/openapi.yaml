@@ -326,7 +326,7 @@ components:
       properties:
         name:
           type: string
-          pattern: '.*[^0-9].*'
+          pattern: '^\d*\D.*$'
           example: El Corral 2
         nit:
           type: string
@@ -427,7 +427,7 @@ components:
       type: object
       required: [securityPin]
       properties:
-        securityPin: { type: string, pattern: '^[0-9]{6}$', example: '482913' }
+        securityPin: { type: string, pattern: '^\d{6}$', example: '482913' }
     OrderResponse:
       allOf:
         - $ref: '#/components/schemas/OrderRequest'

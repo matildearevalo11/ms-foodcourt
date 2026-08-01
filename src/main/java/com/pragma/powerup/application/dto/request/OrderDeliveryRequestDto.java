@@ -9,6 +9,6 @@ import lombok.Setter;
 @Setter
 public class OrderDeliveryRequestDto {
     @NotBlank(message = "Security PIN is required")
-    @Pattern(regexp = "^[0-9]{6}$", message = "Security PIN must contain 6 digits")
+    @Pattern(regexp = "^\\d{6}$", message = "Security PIN must contain 6 digits")
     private String securityPin;
 }
