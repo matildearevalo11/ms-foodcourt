@@ -1,0 +1,13 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    password: ${DB_PASSWORD}
+  jpa:
+    show-sql: false
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

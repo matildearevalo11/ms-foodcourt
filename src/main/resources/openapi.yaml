@@ -1,0 +1,8 @@
+openapi: 3.1.0
+info:
+  title: Food Court API
+  version: 0.0.1
+  description: Base técnica sin historias de usuario.
+servers:
+  - url: /api/v1
+paths: {}
