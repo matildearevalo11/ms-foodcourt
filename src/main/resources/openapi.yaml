@@ -1,8 +1,95 @@
 openapi: 3.1.0
 info:
   title: Food Court API
-  version: 0.0.1
-  description: Base técnica sin historias de usuario.
+  version: 1.0.0
+  description: Gestión de restaurantes de la plazoleta de comidas.
 servers:
   - url: /api/v1
-paths: {}
+paths:
+  /restaurants:
+    post:
+      operationId: createRestaurant
+      summary: Crear un restaurante
+      description: Crea un restaurante asociado a un usuario con rol OWNER.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestaurantRequest'
+      responses:
+        '201':
+          description: Restaurante creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantResponseEnvelope'
+        '400':
+          description: Campos inválidos, NIT duplicado o usuario sin rol OWNER
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '503':
+          description: El microservicio de usuarios no está disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+components:
+  schemas:
+    RestaurantRequest:
+      type: object
+      required:
+        - name
+        - nit
+        - address
+        - phone
+        - urlLogo
+        - ownerId
+      properties:
+        name:
+          type: string
+          pattern: '^(?!\s*\d+\s*$).+'
+          example: Restaurante 123
+        nit:
+          type: string
+          pattern: '^\d+$'
+          example: '900123456'
+        address:
+          type: string
+          example: Local 15
+        phone:
+          type: string
+          maxLength: 13
+          pattern: '^\+?\d+$'
+          example: '+573005698325'
+        urlLogo:
+          type: string
+          example: https://cdn.example.com/logo.png
+        ownerId:
+          type: integer
+          format: int64
+          minimum: 1
+    RestaurantResponse:
+      allOf:
+        - $ref: '#/components/schemas/RestaurantRequest'
+        - type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+    RestaurantResponseEnvelope:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/RestaurantResponse'
+    ExceptionResponse:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: string

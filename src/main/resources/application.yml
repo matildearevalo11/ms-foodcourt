@@ -35,6 +35,13 @@ management:
 
 springdoc:
   swagger-ui:
+    url: /openapi.yaml
     path: /swagger-ui.html
   api-docs:
-    path: /v3/api-docs
+    enabled: false
+
+clients:
+  users:
+    base-url: ${USERS_SERVICE_URL:http://localhost:8081/api/v1}
+    connect-timeout: ${USERS_CONNECT_TIMEOUT:2s}
+    read-timeout: ${USERS_READ_TIMEOUT:3s}
