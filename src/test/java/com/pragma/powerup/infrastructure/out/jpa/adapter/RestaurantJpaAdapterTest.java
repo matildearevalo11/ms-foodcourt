@@ -29,9 +29,11 @@ class RestaurantJpaAdapterTest {
         when(repository.save(entity)).thenReturn(entity);
         when(mapper.toDomain(entity)).thenReturn(saved);
         when(repository.existsByNit("9001")).thenReturn(true);
+        when(repository.existsById(5L)).thenReturn(true);
         RestaurantJpaAdapter adapter = new RestaurantJpaAdapter(repository, mapper);
 
         assertThat(adapter.save(restaurant)).isSameAs(saved);
         assertThat(adapter.existsByNit("9001")).isTrue();
+        assertThat(adapter.existsById(5L)).isTrue();
     }
 }

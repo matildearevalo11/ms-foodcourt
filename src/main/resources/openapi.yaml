@@ -36,6 +36,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExceptionResponse'
+  /restaurants/{restaurantId}/dishes:
+    post:
+      operationId: createDish
+      summary: Crear un plato
+      description: Crea un plato activo y lo asocia a un restaurante y una categoría existentes.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishRequest'
+      responses:
+        '201':
+          description: Plato creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishResponseEnvelope'
+        '400':
+          description: Campos inválidos, restaurante inexistente o categoría inexistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
 components:
   schemas:
     RestaurantRequest:
@@ -86,6 +118,55 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/RestaurantResponse'
+    DishRequest:
+      type: object
+      required:
+        - name
+        - price
+        - description
+        - urlImage
+        - categoryId
+      properties:
+        name:
+          type: string
+          example: Hamburguesa especial
+        price:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 25000
+        description:
+          type: string
+          example: Carne, queso y vegetales
+        urlImage:
+          type: string
+          example: https://cdn.example.com/dish.png
+        categoryId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 2
+    DishResponse:
+      allOf:
+        - $ref: '#/components/schemas/DishRequest'
+        - type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            restaurantId:
+              type: integer
+              format: int64
+            active:
+              type: boolean
+              example: true
+    DishResponseEnvelope:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/DishResponse'
     ExceptionResponse:
       type: object
       properties:

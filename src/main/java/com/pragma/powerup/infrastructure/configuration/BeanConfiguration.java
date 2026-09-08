@@ -1,9 +1,13 @@
 package com.pragma.powerup.infrastructure.configuration;
 
 import com.pragma.powerup.domain.api.IRestaurantServicePort;
+import com.pragma.powerup.domain.api.IDishServicePort;
+import com.pragma.powerup.domain.spi.ICategoryPersistencePort;
+import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.usecase.RestaurantUseCase;
+import com.pragma.powerup.domain.usecase.DishUseCase;
 import java.net.http.HttpClient;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +22,12 @@ public class BeanConfiguration {
     IRestaurantServicePort restaurantServicePort(IRestaurantPersistencePort persistencePort,
                                                   IOwnerValidationPort ownerValidationPort) {
         return new RestaurantUseCase(persistencePort, ownerValidationPort);
+    }
+
+    @Bean
+    IDishServicePort dishServicePort(IDishPersistencePort dishPersistencePort, IRestaurantPersistencePort restaurantPersistencePort,
+                                     ICategoryPersistencePort categoryPersistencePort) {
+        return new DishUseCase(dishPersistencePort, restaurantPersistencePort, categoryPersistencePort);
     }
 
     @Bean
