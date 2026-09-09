@@ -2,12 +2,15 @@ package com.pragma.powerup.domain.usecase;
 
 import com.pragma.powerup.domain.api.IDishServicePort;
 import com.pragma.powerup.domain.exception.ExceptionMessages;
+import com.pragma.powerup.domain.exception.AuthorizationException;
 import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Dish;
+import com.pragma.powerup.domain.model.Restaurant;
 import com.pragma.powerup.domain.spi.ICategoryPersistencePort;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -15,10 +18,11 @@ public class DishUseCase implements IDishServicePort {
     private final IDishPersistencePort dishPersistencePort;
     private final IRestaurantPersistencePort restaurantPersistencePort;
     private final ICategoryPersistencePort categoryPersistencePort;
+    private final ILoggedUserPort loggedUserPort;
 
     @Override
     public Dish createDish(Dish dish) {
-        validateRestaurant(dish.getRestaurantId());
+        validateRestaurantOwner(dish.getRestaurantId());
         validateCategory(dish.getCategoryId());
         dish.setActive(true);
         return dishPersistencePort.save(dish);
@@ -26,6 +30,7 @@ public class DishUseCase implements IDishServicePort {
 
     @Override
     public Dish updateDish(Long restaurantId, Long dishId, Long price, String description) {
+        validateRestaurantOwner(restaurantId);
         Dish dish = dishPersistencePort.findById(dishId)
                 .orElseThrow(() -> new NotFoundException(ExceptionMessages.DISH_NOT_FOUND.getMessage()));
 
@@ -37,9 +42,11 @@ public class DishUseCase implements IDishServicePort {
         return dishPersistencePort.save(dish);
     }
 
-    private void validateRestaurant(Long restaurantId) {
-        if (!restaurantPersistencePort.existsById(restaurantId)) {
-            throw new ValidationException(ExceptionMessages.RESTAURANT_NOT_FOUND.getMessage());
+    private void validateRestaurantOwner(Long restaurantId) {
+        Restaurant restaurant = restaurantPersistencePort.findById(restaurantId)
+                .orElseThrow(() -> new NotFoundException(ExceptionMessages.RESTAURANT_NOT_FOUND.getMessage()));
+        if (!loggedUserPort.getUserId().equals(restaurant.getOwnerId())) {
+            throw new AuthorizationException(ExceptionMessages.RESTAURANT_OWNER_REQUIRED.getMessage());
         }
     }
 

@@ -21,6 +21,8 @@ dependencies {
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.0'
@@ -28,10 +30,16 @@ dependencies {
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 tasks.withType(JavaCompile).configureEach { options.compilerArgs += ['-parameters']; options.encoding = 'UTF-8' }
-tasks.withType(Test).configureEach { useJUnitPlatform(); systemProperty 'file.encoding', 'UTF-8'; finalizedBy jacocoTestReport }
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    systemProperty 'file.encoding', 'UTF-8'
+    systemProperty 'JWT_SECRET', '0123456789abcdef0123456789abcdef'
+    finalizedBy jacocoTestReport
+}
 
 jacocoTestReport { dependsOn test; classDirectories.setFrom(coverageClasses()); reports { xml.required = true; html.required = true; csv.required = false } }
 jacocoTestCoverageVerification {

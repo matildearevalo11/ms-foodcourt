@@ -2,6 +2,8 @@ package com.pragma.powerup.infrastructure.exceptionhandler;
 
 import com.pragma.powerup.domain.exception.ExternalServiceException;
 import com.pragma.powerup.domain.exception.NotFoundException;
+import com.pragma.powerup.domain.exception.AuthorizationException;
+import com.pragma.powerup.domain.exception.AuthenticationException;
 import com.pragma.powerup.domain.exception.ValidationException;
 import jakarta.validation.ConstraintViolationException;
 import java.util.Collections;
@@ -41,6 +43,16 @@ public class ControllerAdvisor {
     @ExceptionHandler(NotFoundException.class)
     ResponseEntity<Map<String, Object>> notFound(NotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(exception.getMessage()));
+    }
+
+    @ExceptionHandler(AuthorizationException.class)
+    ResponseEntity<Map<String, Object>> forbidden(AuthorizationException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody(exception.getMessage()));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    ResponseEntity<Map<String, Object>> unauthorized(AuthenticationException exception) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorBody(exception.getMessage()));
     }
 
     private Map<String, Object> errorBody(String message) {

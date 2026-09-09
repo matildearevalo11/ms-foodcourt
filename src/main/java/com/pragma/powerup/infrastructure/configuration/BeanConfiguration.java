@@ -6,6 +6,7 @@ import com.pragma.powerup.domain.spi.ICategoryPersistencePort;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.usecase.RestaurantUseCase;
 import com.pragma.powerup.domain.usecase.DishUseCase;
 import java.net.http.HttpClient;
@@ -15,6 +16,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.web.client.RestClient;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 
 @Configuration
 public class BeanConfiguration {
@@ -26,8 +29,8 @@ public class BeanConfiguration {
 
     @Bean
     IDishServicePort dishServicePort(IDishPersistencePort dishPersistencePort, IRestaurantPersistencePort restaurantPersistencePort,
-                                     ICategoryPersistencePort categoryPersistencePort) {
-        return new DishUseCase(dishPersistencePort, restaurantPersistencePort, categoryPersistencePort);
+                                     ICategoryPersistencePort categoryPersistencePort, ILoggedUserPort loggedUserPort) {
+        return new DishUseCase(dishPersistencePort, restaurantPersistencePort, categoryPersistencePort, loggedUserPort);
     }
 
     @Bean
@@ -44,6 +47,13 @@ public class BeanConfiguration {
         return RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
+                .requestInterceptor((request, body, execution) -> {
+                    if (SecurityContextHolder.getContext().getAuthentication() != null
+                            && SecurityContextHolder.getContext().getAuthentication().getPrincipal() instanceof Jwt jwt) {
+                        request.getHeaders().setBearerAuth(jwt.getTokenValue());
+                    }
+                    return execution.execute(request, body);
+                })
                 .build();
     }
 }

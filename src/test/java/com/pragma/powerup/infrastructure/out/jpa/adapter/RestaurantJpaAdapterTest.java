@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class RestaurantJpaAdapterTest {
@@ -29,11 +30,11 @@ class RestaurantJpaAdapterTest {
         when(repository.save(entity)).thenReturn(entity);
         when(mapper.toDomain(entity)).thenReturn(saved);
         when(repository.existsByNit("9001")).thenReturn(true);
-        when(repository.existsById(5L)).thenReturn(true);
+        when(repository.findById(5L)).thenReturn(Optional.of(entity));
         RestaurantJpaAdapter adapter = new RestaurantJpaAdapter(repository, mapper);
 
         assertThat(adapter.save(restaurant)).isSameAs(saved);
         assertThat(adapter.existsByNit("9001")).isTrue();
-        assertThat(adapter.existsById(5L)).isTrue();
+        assertThat(adapter.findById(5L)).containsSame(saved);
     }
 }

@@ -7,10 +7,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 import com.pragma.powerup.application.dto.response.DishResponseDto;
 import com.pragma.powerup.application.handler.IDishHandler;
 import com.pragma.powerup.infrastructure.exceptionhandler.ControllerAdvisor;
+import com.pragma.powerup.infrastructure.configuration.SecurityConfiguration;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -20,7 +23,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(DishRestController.class)
-@Import(ControllerAdvisor.class)
+@Import({ControllerAdvisor.class, SecurityConfiguration.class})
 class DishRestControllerTest {
     @Autowired
     MockMvc mvc;
@@ -35,6 +38,7 @@ class DishRestControllerTest {
                 "https://cdn.example.com/dish.png", 2L, 5L, true));
 
         mvc.perform(post("/restaurants/5/dishes")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validBody()))
                 .andExpect(status().isCreated())
@@ -44,6 +48,7 @@ class DishRestControllerTest {
     @Test
     void rejectsMissingFieldsAndInvalidPrice() throws Exception {
         mvc.perform(post("/restaurants/5/dishes")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isBadRequest())
@@ -51,6 +56,7 @@ class DishRestControllerTest {
                 .andExpect(jsonPath("$.errors.price").exists());
 
         mvc.perform(post("/restaurants/5/dishes")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(validBody().replace("25000", "0")))
                 .andExpect(status().isBadRequest())
@@ -64,6 +70,7 @@ class DishRestControllerTest {
                 "https://cdn.example.com/dish.png", 2L, 5L, true));
 
         mvc.perform(patch("/restaurants/5/dishes/10")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"price\":30000,\"description\":\"Nueva descripción\"}"))
                 .andExpect(status().isOk())
@@ -74,19 +81,39 @@ class DishRestControllerTest {
     @Test
     void rejectsInvalidUpdateOrFieldsOutsideContract() throws Exception {
         mvc.perform(patch("/restaurants/5/dishes/10")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"price\":0,\"description\":\"\"}"))
                 .andExpect(status().isBadRequest());
 
         mvc.perform(patch("/restaurants/5/dishes/10")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"price\":30000,\"description\":\"Nueva\",\"name\":\"Otro\"}"))
                 .andExpect(status().isBadRequest());
 
         mvc.perform(patch("/restaurants/0/dishes/10")
+                        .with(ownerJwt())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"price\":30000,\"description\":\"Nueva\"}"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void requiresAuthenticatedOwner() throws Exception {
+        mvc.perform(post("/restaurants/5/dishes")
+                        .contentType(MediaType.APPLICATION_JSON).content(validBody()))
+                .andExpect(status().isUnauthorized());
+
+        mvc.perform(post("/restaurants/5/dishes")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_EMPLOYEE")))
+                        .contentType(MediaType.APPLICATION_JSON).content(validBody()))
+                .andExpect(status().isForbidden());
+    }
+
+    private org.springframework.test.web.servlet.request.RequestPostProcessor ownerJwt() {
+        return jwt().jwt(token -> token.subject("7").claim("role", "OWNER"))
+                .authorities(new SimpleGrantedAuthority("ROLE_OWNER"));
     }
 
     private String validBody() {

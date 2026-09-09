@@ -5,6 +5,8 @@ info:
   description: Gestión de restaurantes de la plazoleta de comidas.
 servers:
   - url: /api/v1
+security:
+  - bearerAuth: []
 paths:
   /restaurants:
     post:
@@ -36,6 +38,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExceptionResponse'
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere rol ADMIN
   /restaurants/{restaurantId}/dishes:
     post:
       operationId: createDish
@@ -68,6 +74,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExceptionResponse'
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere ser propietario del restaurante
   /restaurants/{restaurantId}/dishes/{dishId}:
     patch:
       operationId: updateDish
@@ -113,7 +123,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExceptionResponse'
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere ser propietario del restaurante
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     RestaurantRequest:
       type: object

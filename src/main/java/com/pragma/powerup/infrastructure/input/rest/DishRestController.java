@@ -4,6 +4,8 @@ import com.pragma.powerup.application.dto.request.DishRequestDto;
 import com.pragma.powerup.application.dto.request.DishUpdateRequestDto;
 import com.pragma.powerup.application.dto.response.DishResponseDto;
 import com.pragma.powerup.application.handler.IDishHandler;
+import com.pragma.powerup.domain.enums.RoleEnum;
+import com.pragma.powerup.infrastructure.security.RequireRole;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class DishRestController {
     private final IDishHandler handler;
 
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.OWNER)
     @ResponseStatus(HttpStatus.CREATED)
     public DefaultResponse<DishResponseDto> createDish(@PathVariable @Positive Long restaurantId,
                                                        @Valid @RequestBody DishRequestDto request) {
@@ -33,6 +36,7 @@ public class DishRestController {
     }
 
     @PatchMapping(value = "/{dishId}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.OWNER)
     public DefaultResponse<DishResponseDto> updateDish(@PathVariable @Positive Long restaurantId,
             @PathVariable @Positive Long dishId, @Valid @RequestBody DishUpdateRequestDto request) {
         return new DefaultResponse<>(handler.updateDish(restaurantId, dishId, request));
