@@ -68,6 +68,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ExceptionResponse'
+  /restaurants/{restaurantId}/dishes/{dishId}:
+    patch:
+      operationId: updateDish
+      summary: Modificar un plato
+      description: Modifica el precio y la descripción de un plato que pertenece a un restaurante.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: dishId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishUpdateRequest'
+      responses:
+        '200':
+          description: Plato modificado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishResponseEnvelope'
+        '400':
+          description: Precio, descripción o identificadores inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '404':
+          description: El plato no existe en el restaurante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
 components:
   schemas:
     RestaurantRequest:
@@ -167,6 +212,22 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/DishResponse'
+    DishUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - price
+        - description
+      properties:
+        price:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 30000
+        description:
+          type: string
+          minLength: 1
+          example: Carne, queso, vegetales y salsa de la casa
     ExceptionResponse:
       type: object
       properties:

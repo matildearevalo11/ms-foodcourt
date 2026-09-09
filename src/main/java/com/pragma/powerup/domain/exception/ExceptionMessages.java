@@ -10,7 +10,8 @@ public enum ExceptionMessages {
     NIT_ALREADY_EXISTS("A restaurant with this NIT already exists"),
     USERS_SERVICE_UNAVAILABLE("User service is unavailable"),
     RESTAURANT_NOT_FOUND("The requested restaurant does not exist"),
-    CATEGORY_NOT_FOUND("The requested category does not exist");
+    CATEGORY_NOT_FOUND("The requested category does not exist"),
+    DISH_NOT_FOUND("The requested dish does not exist");
 
     private final String message;
 }

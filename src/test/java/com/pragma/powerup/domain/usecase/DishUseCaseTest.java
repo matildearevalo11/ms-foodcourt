@@ -7,6 +7,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.pragma.powerup.domain.exception.ValidationException;
+import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.model.Dish;
 import com.pragma.powerup.domain.spi.ICategoryPersistencePort;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class DishUseCaseTest {
@@ -64,6 +66,34 @@ class DishUseCaseTest {
 
         assertThatThrownBy(() -> useCase.createDish(dish))
                 .isInstanceOf(ValidationException.class);
+        verify(dishPersistencePort, never()).save(dish);
+    }
+
+    @Test
+    void updatesOnlyPriceAndDescription() {
+        Dish dish = validDish();
+        when(dishPersistencePort.findById(10L)).thenReturn(Optional.of(dish));
+        when(dishPersistencePort.save(dish)).thenReturn(dish);
+
+        Dish result = useCase.updateDish(5L, 10L, 30000L, "Nueva descripción");
+
+        assertThat(result.getPrice()).isEqualTo(30000L);
+        assertThat(result.getDescription()).isEqualTo("Nueva descripción");
+        assertThat(result.getName()).isEqualTo("Hamburguesa");
+        assertThat(result.getCategoryId()).isEqualTo(2L);
+        assertThat(result.getRestaurantId()).isEqualTo(5L);
+    }
+
+    @Test
+    void rejectsMissingDishOrDishFromAnotherRestaurant() {
+        when(dishPersistencePort.findById(99L)).thenReturn(Optional.empty());
+        assertThatThrownBy(() -> useCase.updateDish(5L, 99L, 30000L, "Descripción"))
+                .isInstanceOf(NotFoundException.class);
+
+        Dish dish = validDish();
+        when(dishPersistencePort.findById(10L)).thenReturn(Optional.of(dish));
+        assertThatThrownBy(() -> useCase.updateDish(8L, 10L, 30000L, "Descripción"))
+                .isInstanceOf(NotFoundException.class);
         verify(dishPersistencePort, never()).save(dish);
     }
 

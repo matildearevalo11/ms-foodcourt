@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class DishJpaAdapterTest {
@@ -32,5 +33,17 @@ class DishJpaAdapterTest {
         DishJpaAdapter adapter = new DishJpaAdapter(repository, mapper);
 
         assertThat(adapter.save(dish)).isSameAs(saved);
+    }
+
+    @Test
+    void findsAndMapsDish() {
+        DishEntity entity = new DishEntity();
+        Dish dish = new Dish();
+        when(repository.findById(10L)).thenReturn(Optional.of(entity));
+        when(mapper.toDomain(entity)).thenReturn(dish);
+
+        DishJpaAdapter adapter = new DishJpaAdapter(repository, mapper);
+
+        assertThat(adapter.findById(10L)).containsSame(dish);
     }
 }

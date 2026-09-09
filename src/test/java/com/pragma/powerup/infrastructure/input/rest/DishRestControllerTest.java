@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -54,6 +55,38 @@ class DishRestControllerTest {
                         .content(validBody().replace("25000", "0")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors.price").exists());
+    }
+
+    @Test
+    void updatesPriceAndDescription() throws Exception {
+        when(handler.updateDish(eq(5L), eq(10L), any())).thenReturn(new DishResponseDto(
+                10L, "Hamburguesa", 30000L, "Nueva descripción",
+                "https://cdn.example.com/dish.png", 2L, 5L, true));
+
+        mvc.perform(patch("/restaurants/5/dishes/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"price\":30000,\"description\":\"Nueva descripción\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.price").value(30000))
+                .andExpect(jsonPath("$.data.description").value("Nueva descripción"));
+    }
+
+    @Test
+    void rejectsInvalidUpdateOrFieldsOutsideContract() throws Exception {
+        mvc.perform(patch("/restaurants/5/dishes/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"price\":0,\"description\":\"\"}"))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(patch("/restaurants/5/dishes/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"price\":30000,\"description\":\"Nueva\",\"name\":\"Otro\"}"))
+                .andExpect(status().isBadRequest());
+
+        mvc.perform(patch("/restaurants/0/dishes/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"price\":30000,\"description\":\"Nueva\"}"))
+                .andExpect(status().isBadRequest());
     }
 
     private String validBody() {

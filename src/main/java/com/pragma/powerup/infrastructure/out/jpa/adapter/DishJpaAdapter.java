@@ -4,6 +4,7 @@ import com.pragma.powerup.domain.model.Dish;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.infrastructure.out.jpa.mapper.IDishEntityMapper;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IDishRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -16,5 +17,10 @@ public class DishJpaAdapter implements IDishPersistencePort {
     @Override
     public Dish save(Dish dish) {
         return mapper.toDomain(repository.save(mapper.toEntity(dish)));
+    }
+
+    @Override
+    public Optional<Dish> findById(Long dishId) {
+        return repository.findById(dishId).map(mapper::toDomain);
     }
 }
