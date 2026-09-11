@@ -20,4 +20,9 @@ public class RestaurantHandler implements IRestaurantHandler {
     public RestaurantResponseDto createRestaurant(RestaurantRequestDto request) {
         return responseMapper.toResponse(servicePort.createRestaurant(requestMapper.toRestaurant(request)));
     }
+
+    @Override
+    public void validateOwnership(Long restaurantId) {
+        servicePort.validateOwnership(restaurantId);
+    }
 }

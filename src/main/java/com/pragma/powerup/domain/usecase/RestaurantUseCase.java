@@ -1,9 +1,12 @@
 package com.pragma.powerup.domain.usecase;
 
 import com.pragma.powerup.domain.api.IRestaurantServicePort;
+import com.pragma.powerup.domain.exception.AuthorizationException;
 import com.pragma.powerup.domain.exception.ExceptionMessages;
+import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Restaurant;
+import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class RestaurantUseCase implements IRestaurantServicePort {
     private final IRestaurantPersistencePort persistencePort;
     private final IOwnerValidationPort ownerValidationPort;
+    private final ILoggedUserPort loggedUserPort;
 
     @Override
     public Restaurant createRestaurant(Restaurant restaurant) {
@@ -19,6 +23,15 @@ public class RestaurantUseCase implements IRestaurantServicePort {
         validateNitAvailability(restaurant.getNit());
         validateOwner(restaurant.getOwnerId());
         return persistencePort.save(restaurant);
+    }
+
+    @Override
+    public void validateOwnership(Long restaurantId) {
+        Restaurant restaurant = persistencePort.findById(restaurantId)
+                .orElseThrow(() -> new NotFoundException(ExceptionMessages.RESTAURANT_NOT_FOUND.getMessage()));
+        if (!restaurant.getOwnerId().equals(loggedUserPort.getUserId())) {
+            throw new AuthorizationException(ExceptionMessages.RESTAURANT_OWNER_REQUIRED.getMessage());
+        }
     }
 
     private void normalize(Restaurant restaurant) {

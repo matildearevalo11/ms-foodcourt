@@ -22,9 +22,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 @Configuration
 public class BeanConfiguration {
     @Bean
-    IRestaurantServicePort restaurantServicePort(IRestaurantPersistencePort persistencePort,
-                                                  IOwnerValidationPort ownerValidationPort) {
-        return new RestaurantUseCase(persistencePort, ownerValidationPort);
+    IRestaurantServicePort restaurantServicePort(IRestaurantPersistencePort persistencePort,      IOwnerValidationPort ownerValidationPort,
+                                                  ILoggedUserPort loggedUserPort) {
+        return new RestaurantUseCase(persistencePort, ownerValidationPort, loggedUserPort);
     }
 
     @Bean

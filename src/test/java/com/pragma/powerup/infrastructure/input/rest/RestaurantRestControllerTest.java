@@ -3,6 +3,7 @@ package com.pragma.powerup.infrastructure.input.rest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -78,6 +79,14 @@ class RestaurantRestControllerTest {
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_OWNER")))
                         .contentType(MediaType.APPLICATION_JSON).content(validBody()))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void validatesOwnershipForAuthenticatedOwner() throws Exception {
+        mvc.perform(get("/restaurants/5/ownership")
+                        .with(jwt().jwt(token -> token.subject("7").claim("role", "OWNER"))
+                                .authorities(new SimpleGrantedAuthority("ROLE_OWNER"))))
+                .andExpect(status().isNoContent());
     }
 
     private org.springframework.test.web.servlet.request.RequestPostProcessor adminJwt() {

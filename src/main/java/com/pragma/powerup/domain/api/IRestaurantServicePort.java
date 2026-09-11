@@ -4,4 +4,5 @@ import com.pragma.powerup.domain.model.Restaurant;
 
 public interface IRestaurantServicePort {
     Restaurant createRestaurant(Restaurant restaurant);
+    void validateOwnership(Long restaurantId);
 }

@@ -5,4 +5,5 @@ import com.pragma.powerup.application.dto.response.RestaurantResponseDto;
 
 public interface IRestaurantHandler {
     RestaurantResponseDto createRestaurant(RestaurantRequestDto request);
+    void validateOwnership(Long restaurantId);
 }

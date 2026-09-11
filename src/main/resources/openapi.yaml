@@ -78,6 +78,28 @@ paths:
           description: Token ausente o inválido
         '403':
           description: Se requiere ser propietario del restaurante
+  /restaurants/{restaurantId}/ownership:
+    get:
+      operationId: validateRestaurantOwnership
+      summary: Validar propiedad de un restaurante
+      description: Verifica que el restaurante pertenezca al propietario autenticado.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '204':
+          description: El restaurante pertenece al propietario autenticado
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: El restaurante pertenece a otro propietario
+        '404':
+          description: El restaurante no existe
   /restaurants/{restaurantId}/dishes/{dishId}:
     patch:
       operationId: updateDish
