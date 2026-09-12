@@ -5,22 +5,21 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import com.pragma.powerup.domain.exception.ValidationException;
-import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.exception.AuthorizationException;
+import com.pragma.powerup.domain.exception.NotFoundException;
+import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Dish;
 import com.pragma.powerup.domain.model.Restaurant;
 import com.pragma.powerup.domain.spi.ICategoryPersistencePort;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
-import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
+import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class DishUseCaseTest {
@@ -116,6 +115,31 @@ class DishUseCaseTest {
         assertThatThrownBy(() -> useCase.createDish(validDish()))
                 .isInstanceOf(AuthorizationException.class);
         verify(dishPersistencePort, never()).save(validDish());
+    }
+
+    @Test
+    void updatesDishStatusForItsRestaurantOwner() {
+        Dish dish = validDish();
+        dish.setActive(true);
+        ownerRestaurant(5L);
+        when(dishPersistencePort.findById(10L)).thenReturn(Optional.of(dish));
+        when(dishPersistencePort.save(dish)).thenReturn(dish);
+
+        Dish result = useCase.updateDishStatus(5L, 10L, false);
+
+        assertThat(result.isActive()).isFalse();
+        verify(dishPersistencePort).save(dish);
+    }
+
+    @Test
+    void rejectsStatusChangeForDishFromAnotherRestaurant() {
+        Dish dish = validDish();
+        ownerRestaurant(8L);
+        when(dishPersistencePort.findById(10L)).thenReturn(Optional.of(dish));
+
+        assertThatThrownBy(() -> useCase.updateDishStatus(8L, 10L, false))
+                .isInstanceOf(NotFoundException.class);
+        verify(dishPersistencePort, never()).save(dish);
     }
 
     private void ownerRestaurant(Long restaurantId) {

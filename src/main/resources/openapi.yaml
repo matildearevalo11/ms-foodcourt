@@ -149,6 +149,51 @@ paths:
           description: Token ausente o inválido
         '403':
           description: Se requiere ser propietario del restaurante
+  /restaurants/{restaurantId}/dishes/{dishId}/status:
+    patch:
+      operationId: updateDishStatus
+      summary: Habilitar o deshabilitar un plato
+      description: Actualiza el estado de un plato perteneciente al restaurante del propietario autenticado.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: dishId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishStatusRequest'
+      responses:
+        '200':
+          description: Estado del plato actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishResponseEnvelope'
+        '400':
+          description: Estado o identificadores inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere ser propietario del restaurante
+        '404':
+          description: El plato no existe en el restaurante
 components:
   securitySchemes:
     bearerAuth:
@@ -269,6 +314,15 @@ components:
           type: string
           minLength: 1
           example: Carne, queso, vegetales y salsa de la casa
+    DishStatusRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - active
+      properties:
+        active:
+          type: boolean
+          example: false
     ExceptionResponse:
       type: object
       properties:

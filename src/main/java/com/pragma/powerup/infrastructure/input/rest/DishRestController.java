@@ -41,4 +41,11 @@ public class DishRestController {
             @PathVariable @Positive Long dishId, @Valid @RequestBody DishUpdateRequestDto request) {
         return new DefaultResponse<>(handler.updateDish(restaurantId, dishId, request));
     }
+
+    @PatchMapping(value = "/{dishId}/status", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.OWNER)
+    public DefaultResponse<DishResponseDto> updateDishStatus(@PathVariable @Positive Long restaurantId,
+            @PathVariable @Positive Long dishId, @Valid @RequestBody DishStatusRequestDto request) {
+        return new DefaultResponse<>(handler.updateDishStatus(restaurantId, dishId, request));
+    }
 }

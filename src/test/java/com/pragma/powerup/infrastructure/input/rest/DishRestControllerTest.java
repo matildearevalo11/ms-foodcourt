@@ -3,22 +3,22 @@ package com.pragma.powerup.infrastructure.input.rest;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 import com.pragma.powerup.application.dto.response.DishResponseDto;
 import com.pragma.powerup.application.handler.IDishHandler;
-import com.pragma.powerup.infrastructure.exceptionhandler.ControllerAdvisor;
 import com.pragma.powerup.infrastructure.configuration.SecurityConfiguration;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import com.pragma.powerup.infrastructure.exceptionhandler.ControllerAdvisor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -108,6 +108,50 @@ class DishRestControllerTest {
         mvc.perform(post("/restaurants/5/dishes")
                         .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_EMPLOYEE")))
                         .contentType(MediaType.APPLICATION_JSON).content(validBody()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void updatesDishStatusAsRestaurantOwner() throws Exception {
+        when(handler.updateDishStatus(eq(5L), eq(10L), any())).thenReturn(new DishResponseDto(
+                10L, "Hamburguesa", 25000L, "Carne y queso",
+                "https://cdn.example.com/dish.png", 2L, 5L, false));
+
+        mvc.perform(patch("/restaurants/5/dishes/10/status")
+                        .with(ownerJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":false}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.active").value(false));
+    }
+
+    @Test
+    void validatesDishStatusRequestAndIdentifiers() throws Exception {
+        mvc.perform(patch("/restaurants/5/dishes/10/status")
+                        .with(ownerJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.active").exists());
+
+        mvc.perform(patch("/restaurants/0/dishes/10/status")
+                        .with(ownerJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":false}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void requiresAuthenticatedOwnerToUpdateDishStatus() throws Exception {
+        mvc.perform(patch("/restaurants/5/dishes/10/status")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":false}"))
+                .andExpect(status().isUnauthorized());
+
+        mvc.perform(patch("/restaurants/5/dishes/10/status")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_EMPLOYEE")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"active\":false}"))
                 .andExpect(status().isForbidden());
     }
 

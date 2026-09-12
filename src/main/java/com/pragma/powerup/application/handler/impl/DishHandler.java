@@ -28,4 +28,10 @@ public class DishHandler implements IDishHandler {
         Dish dish = servicePort.updateDish(restaurantId, dishId, request.price(), request.description());
         return responseMapper.toResponse(dish);
     }
+
+    @Override
+    public DishResponseDto updateDishStatus(Long restaurantId, Long dishId, DishStatusRequestDto request) {
+        Dish dish = servicePort.updateDishStatus(restaurantId, dishId, request.active());
+        return responseMapper.toResponse(dish);
+    }
 }

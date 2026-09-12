@@ -6,4 +6,6 @@ public interface IDishServicePort {
     Dish createDish(Dish dish);
 
     Dish updateDish(Long restaurantId, Long dishId, Long price, String description);
+
+    Dish updateDishStatus(Long restaurantId, Long dishId, boolean active);
 }
