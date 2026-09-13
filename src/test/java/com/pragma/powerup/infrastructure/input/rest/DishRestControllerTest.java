@@ -5,11 +5,15 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 
 import com.pragma.powerup.application.dto.response.DishResponseDto;
+import com.pragma.powerup.application.dto.response.DishSummaryResponseDto;
+import com.pragma.powerup.application.dto.response.PageMetadataDto;
+import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.handler.IDishHandler;
 import com.pragma.powerup.infrastructure.configuration.SecurityConfiguration;
 import com.pragma.powerup.infrastructure.exceptionhandler.ControllerAdvisor;
@@ -21,6 +25,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import java.util.List;
 
 @WebMvcTest(DishRestController.class)
 @Import({ControllerAdvisor.class, SecurityConfiguration.class})
@@ -155,9 +160,44 @@ class DishRestControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void listsPaginatedRestaurantMenuAsCustomer() throws Exception {
+        DishSummaryResponseDto dish = new DishSummaryResponseDto(
+                10L, "Hamburguesa", 25000L, "Carne y queso", "https://cdn.example.com/dish.png", 2L);
+        when(handler.getDishes(5L, 2L, 1, 5)).thenReturn(
+                new PageResponseDto<>(List.of(dish), new PageMetadataDto(1, 5, 6, 2)));
+
+        mvc.perform(get("/restaurants/5/dishes")
+                        .with(customerJwt())
+                        .param("categoryId", "2")
+                        .param("page", "1")
+                        .param("size", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].name").value("Hamburguesa"))
+                .andExpect(jsonPath("$.data[0].restaurantId").doesNotExist())
+                .andExpect(jsonPath("$.data[0].active").doesNotExist())
+                .andExpect(jsonPath("$.meta.page").value(1))
+                .andExpect(jsonPath("$.meta.size").value(5))
+                .andExpect(jsonPath("$.meta.totalElements").value(6));
+    }
+
+    @Test
+    void requiresAuthenticatedCustomerToListMenu() throws Exception {
+        mvc.perform(get("/restaurants/5/dishes"))
+                .andExpect(status().isUnauthorized());
+
+        mvc.perform(get("/restaurants/5/dishes").with(ownerJwt()))
+                .andExpect(status().isForbidden());
+    }
+
     private org.springframework.test.web.servlet.request.RequestPostProcessor ownerJwt() {
         return jwt().jwt(token -> token.subject("7").claim("role", "OWNER"))
                 .authorities(new SimpleGrantedAuthority("ROLE_OWNER"));
+    }
+
+    private org.springframework.test.web.servlet.request.RequestPostProcessor customerJwt() {
+        return jwt().jwt(token -> token.subject("20").claim("role", "CUSTOMER"))
+                .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
     }
 
     private String validBody() {

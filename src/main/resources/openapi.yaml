@@ -74,6 +74,51 @@ paths:
         '403':
           description: Se requiere rol ADMIN
   /restaurants/{restaurantId}/dishes:
+    get:
+      operationId: getDishes
+      summary: Listar los platos de un restaurante
+      description: Lista los platos activos de un restaurante con filtro por categoría.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Platos encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishSummaryPage'
+        '400':
+          description: Identificador o parámetros de paginación inválidos
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere rol CUSTOMER
     post:
       operationId: createDish
       summary: Crear un plato
@@ -374,6 +419,48 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/DishResponse'
+    DishSummary:
+      type: object
+      required:
+        - id
+        - name
+        - price
+        - description
+        - urlImage
+        - categoryId
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: Hamburguesa especial
+        price:
+          type: integer
+          format: int64
+          example: 25000
+        description:
+          type: string
+          example: Carne, queso y vegetales
+        urlImage:
+          type: string
+          example: https://cdn.example.com/dish.png
+        categoryId:
+          type: integer
+          format: int64
+          example: 2
+    DishSummaryPage:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DishSummary'
+        meta:
+          $ref: '#/components/schemas/PageMetadata'
     DishUpdateRequest:
       type: object
       additionalProperties: false

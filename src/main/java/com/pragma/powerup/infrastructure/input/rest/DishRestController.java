@@ -4,10 +4,14 @@ import com.pragma.powerup.application.dto.request.DishRequestDto;
 import com.pragma.powerup.application.dto.request.DishStatusRequestDto;
 import com.pragma.powerup.application.dto.request.DishUpdateRequestDto;
 import com.pragma.powerup.application.dto.response.DishResponseDto;
+import com.pragma.powerup.application.dto.response.DishSummaryResponseDto;
+import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.handler.IDishHandler;
 import com.pragma.powerup.domain.enums.RoleEnum;
 import com.pragma.powerup.infrastructure.security.RequireRole;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,8 +20,10 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -48,5 +54,13 @@ public class DishRestController {
     public DefaultResponse<DishResponseDto> updateDishStatus(@PathVariable @Positive Long restaurantId,
             @PathVariable @Positive Long dishId, @Valid @RequestBody DishStatusRequestDto request) {
         return new DefaultResponse<>(handler.updateDishStatus(restaurantId, dishId, request));
+    }
+
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.CUSTOMER)
+    public PageResponseDto<DishSummaryResponseDto> getDishes(@PathVariable @Positive Long restaurantId,
+            @RequestParam(required = false) @Positive Long categoryId, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return handler.getDishes(restaurantId, categoryId, page, size);
     }
 }

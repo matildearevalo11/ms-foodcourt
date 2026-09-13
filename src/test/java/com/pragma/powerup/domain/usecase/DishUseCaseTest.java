@@ -9,12 +9,14 @@ import com.pragma.powerup.domain.exception.AuthorizationException;
 import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Dish;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.model.Restaurant;
 import com.pragma.powerup.domain.spi.ICategoryPersistencePort;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import java.util.Optional;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -140,6 +142,16 @@ class DishUseCaseTest {
         assertThatThrownBy(() -> useCase.updateDishStatus(8L, 10L, false))
                 .isInstanceOf(NotFoundException.class);
         verify(dishPersistencePort, never()).save(dish);
+    }
+
+    @Test
+    void listsActiveRestaurantDishesWithOptionalCategoryAndPagination() {
+        PageResult<Dish> expected = new PageResult<>(List.of(validDish()), 1, 5, 6, 2);
+        when(dishPersistencePort.findActiveByRestaurant(5L, 2L, 1, 5)).thenReturn(expected);
+
+        PageResult<Dish> result = useCase.getDishes(5L, 2L, 1, 5);
+
+        assertThat(result).isSameAs(expected);
     }
 
     private void ownerRestaurant(Long restaurantId) {

@@ -8,6 +8,7 @@ import com.pragma.powerup.application.dto.request.DishUpdateRequestDto;
 import com.pragma.powerup.application.dto.response.DishResponseDto;
 import com.pragma.powerup.application.mapper.IDishRequestMapper;
 import com.pragma.powerup.application.mapper.IDishResponseMapper;
+import com.pragma.powerup.application.mapper.IDishSummaryResponseMapper;
 import com.pragma.powerup.domain.api.IDishServicePort;
 import com.pragma.powerup.domain.model.Dish;
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,9 @@ class DishHandlerTest {
     @Mock
     IDishResponseMapper responseMapper;
 
+    @Mock
+    IDishSummaryResponseMapper summaryResponseMapper;
+
     @Test
     void delegatesDishCreationThroughApplicationPorts() {
         DishRequestDto request = new DishRequestDto(
@@ -38,7 +42,7 @@ class DishHandlerTest {
         when(servicePort.createDish(dish)).thenReturn(dish);
         when(responseMapper.toResponse(dish)).thenReturn(expected);
 
-        DishHandler handler = new DishHandler(servicePort, requestMapper, responseMapper);
+        DishHandler handler = new DishHandler(servicePort, requestMapper, responseMapper, summaryResponseMapper);
 
         assertThat(handler.createDish(5L, request)).isEqualTo(expected);
     }
@@ -53,7 +57,7 @@ class DishHandlerTest {
         when(servicePort.updateDish(5L, 10L, request.price(), request.description())).thenReturn(dish);
         when(responseMapper.toResponse(dish)).thenReturn(expected);
 
-        DishHandler handler = new DishHandler(servicePort, requestMapper, responseMapper);
+        DishHandler handler = new DishHandler(servicePort, requestMapper, responseMapper, summaryResponseMapper);
 
         assertThat(handler.updateDish(5L, 10L, request)).isEqualTo(expected);
     }
