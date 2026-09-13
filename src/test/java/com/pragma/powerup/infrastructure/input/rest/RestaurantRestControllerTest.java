@@ -2,24 +2,28 @@ package com.pragma.powerup.infrastructure.input.rest;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import com.pragma.powerup.application.dto.response.PageMetadataDto;
+import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.dto.response.RestaurantResponseDto;
+import com.pragma.powerup.application.dto.response.RestaurantSummaryResponseDto;
 import com.pragma.powerup.application.handler.IRestaurantHandler;
 import com.pragma.powerup.domain.exception.ExternalServiceException;
-import com.pragma.powerup.infrastructure.exceptionhandler.ControllerAdvisor;
 import com.pragma.powerup.infrastructure.configuration.SecurityConfiguration;
+import com.pragma.powerup.infrastructure.exceptionhandler.ControllerAdvisor;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 @WebMvcTest(RestaurantRestController.class)
 @Import({ControllerAdvisor.class, SecurityConfiguration.class})
@@ -87,6 +91,31 @@ class RestaurantRestControllerTest {
                         .with(jwt().jwt(token -> token.subject("7").claim("role", "OWNER"))
                                 .authorities(new SimpleGrantedAuthority("ROLE_OWNER"))))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void listsOnlyRestaurantNameAndLogoForCustomer() throws Exception {
+        when(handler.getRestaurants(0, 2)).thenReturn(new PageResponseDto<>(
+                List.of(new RestaurantSummaryResponseDto("Arepas", "https://logo.test/arepas.png")),
+                new PageMetadataDto(0, 2, 1, 1)));
+
+        mvc.perform(get("/restaurants?page=0&size=2")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].name").value("Arepas"))
+                .andExpect(jsonPath("$.data[0].urlLogo").value("https://logo.test/arepas.png"))
+                .andExpect(jsonPath("$.data[0].nit").doesNotExist())
+                .andExpect(jsonPath("$.meta.totalElements").value(1));
+    }
+
+    @Test
+    void requiresAuthenticatedCustomerToListRestaurants() throws Exception {
+        mvc.perform(get("/restaurants"))
+                .andExpect(status().isUnauthorized());
+
+        mvc.perform(get("/restaurants")
+                        .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_OWNER"))))
+                .andExpect(status().isForbidden());
     }
 
     private org.springframework.test.web.servlet.request.RequestPostProcessor adminJwt() {

@@ -5,6 +5,7 @@ import com.pragma.powerup.domain.exception.AuthorizationException;
 import com.pragma.powerup.domain.exception.ExceptionMessages;
 import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.exception.ValidationException;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.model.Restaurant;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOwnerValidationPort;
@@ -23,6 +24,11 @@ public class RestaurantUseCase implements IRestaurantServicePort {
         validateNitAvailability(restaurant.getNit());
         validateOwner(restaurant.getOwnerId());
         return persistencePort.save(restaurant);
+    }
+
+    @Override
+    public PageResult<Restaurant> getRestaurants(int page, int size) {
+        return persistencePort.findAllByNameAsc(page, size);
     }
 
     @Override

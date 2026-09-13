@@ -9,6 +9,37 @@ security:
   - bearerAuth: []
 paths:
   /restaurants:
+    get:
+      operationId: getRestaurants
+      summary: Listar restaurantes
+      description: Lista los restaurantes alfabéticamente y de forma paginada.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Restaurantes encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantSummaryPage'
+        '400':
+          description: Parámetros de paginación inválidos
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere rol CUSTOMER
     post:
       operationId: createRestaurant
       summary: Crear un restaurante
@@ -249,6 +280,51 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/RestaurantResponse'
+    RestaurantSummary:
+      type: object
+      required:
+        - name
+        - urlLogo
+      properties:
+        name:
+          type: string
+          example: El Corral
+        urlLogo:
+          type: string
+          example: https://cdn.example.com/logo.png
+    PageMetadata:
+      type: object
+      required:
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        page:
+          type: integer
+          example: 0
+        size:
+          type: integer
+          example: 10
+        totalElements:
+          type: integer
+          format: int64
+          example: 25
+        totalPages:
+          type: integer
+          example: 3
+    RestaurantSummaryPage:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestaurantSummary'
+        meta:
+          $ref: '#/components/schemas/PageMetadata'
     DishRequest:
       type: object
       required:

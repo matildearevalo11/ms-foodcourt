@@ -5,12 +5,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.exception.AuthorizationException;
+import com.pragma.powerup.domain.exception.ValidationException;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.model.Restaurant;
-import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
+import com.pragma.powerup.domain.spi.IOwnerValidationPort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -87,6 +89,14 @@ class RestaurantUseCaseTest {
 
         assertThatThrownBy(() -> useCase.validateOwnership(1L))
                 .isInstanceOf(AuthorizationException.class);
+    }
+
+    @Test
+    void delegatesPaginatedRestaurantListing() {
+        PageResult<Restaurant> expected = new PageResult<>(List.of(validRestaurant()), 0, 5, 1, 1);
+        when(persistencePort.findAllByNameAsc(0, 5)).thenReturn(expected);
+
+        assertThat(useCase.getRestaurants(0, 5)).isSameAs(expected);
     }
 
     private Restaurant validRestaurant() {

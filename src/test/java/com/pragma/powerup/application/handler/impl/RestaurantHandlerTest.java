@@ -6,6 +6,7 @@ import com.pragma.powerup.application.dto.request.RestaurantRequestDto;
 import com.pragma.powerup.application.dto.response.RestaurantResponseDto;
 import com.pragma.powerup.application.mapper.IRestaurantRequestMapper;
 import com.pragma.powerup.application.mapper.IRestaurantResponseMapper;
+import com.pragma.powerup.application.mapper.IRestaurantSummaryResponseMapper;
 import com.pragma.powerup.domain.api.IRestaurantServicePort;
 import com.pragma.powerup.domain.model.Restaurant;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,9 @@ class RestaurantHandlerTest {
     @Mock
     IRestaurantResponseMapper responseMapper;
 
+    @Mock
+    IRestaurantSummaryResponseMapper summaryResponseMapper;
+
     @Test
     void delegatesCreationThroughApplicationPorts() {
         RestaurantRequestDto request = new RestaurantRequestDto(
@@ -35,7 +39,8 @@ class RestaurantHandlerTest {
         when(servicePort.createRestaurant(restaurant)).thenReturn(restaurant);
         when(responseMapper.toResponse(restaurant)).thenReturn(expected);
 
-        RestaurantHandler handler = new RestaurantHandler(servicePort, requestMapper, responseMapper);
+        RestaurantHandler handler = new RestaurantHandler(
+                servicePort, requestMapper, responseMapper, summaryResponseMapper);
 
         assertThat(handler.createRestaurant(request)).isEqualTo(expected);
     }
