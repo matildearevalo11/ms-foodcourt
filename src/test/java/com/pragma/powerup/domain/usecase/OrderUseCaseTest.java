@@ -11,6 +11,7 @@ import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Dish;
 import com.pragma.powerup.domain.model.Order;
 import com.pragma.powerup.domain.model.OrderItem;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.model.Restaurant;
 import com.pragma.powerup.domain.spi.IDishPersistencePort;
 import com.pragma.powerup.domain.spi.ILoggedUserPort;
@@ -106,6 +107,18 @@ class OrderUseCaseTest {
                 .isInstanceOf(ValidationException.class);
 
         verify(dishPersistencePort, never()).findAllById(any());
+    }
+
+    @Test
+    void listsOnlyOrdersFromAuthenticatedEmployeeRestaurant() {
+        PageResult<Order> expected = new PageResult<>(List.of(order(List.of())), 0, 5, 1, 1);
+        when(loggedUserPort.getRestaurantId()).thenReturn(5L);
+        when(orderPersistencePort.findByRestaurantIdAndStatus(5L, OrderStatus.PENDING, 0, 5))
+                .thenReturn(expected);
+
+        PageResult<Order> result = useCase.getOrdersByStatus(OrderStatus.PENDING, 0, 5);
+
+        assertThat(result).isSameAs(expected);
     }
 
     private Order order(List<OrderItem> items) {

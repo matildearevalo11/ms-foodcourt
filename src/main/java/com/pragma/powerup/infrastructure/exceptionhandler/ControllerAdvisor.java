@@ -1,6 +1,7 @@
 package com.pragma.powerup.infrastructure.exceptionhandler;
 
 import com.pragma.powerup.domain.exception.ExternalServiceException;
+import com.pragma.powerup.domain.exception.ExceptionMessages;
 import com.pragma.powerup.domain.exception.NotFoundException;
 import com.pragma.powerup.domain.exception.AuthorizationException;
 import com.pragma.powerup.domain.exception.AuthenticationException;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 @RestControllerAdvice
 public class ControllerAdvisor {
@@ -28,6 +30,11 @@ public class ControllerAdvisor {
     @ExceptionHandler(ConstraintViolationException.class)
     ResponseEntity<Map<String, Object>> invalidParameter(ConstraintViolationException exception) {
         return ResponseEntity.badRequest().body(errorBody(exception.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    ResponseEntity<Map<String, Object>> invalidParameterType() {
+        return ResponseEntity.badRequest().body(errorBody(ExceptionMessages.INVALID_PARAMETER_TYPE.getMessage()));
     }
 
     @ExceptionHandler(ValidationException.class)

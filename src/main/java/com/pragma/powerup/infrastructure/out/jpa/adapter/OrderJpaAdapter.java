@@ -4,6 +4,7 @@ import com.pragma.powerup.domain.enums.OrderStatus;
 import com.pragma.powerup.domain.exception.ExceptionMessages;
 import com.pragma.powerup.domain.exception.ValidationException;
 import com.pragma.powerup.domain.model.Order;
+import com.pragma.powerup.domain.model.PageResult;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.infrastructure.out.jpa.entity.OrderEntity;
 import com.pragma.powerup.infrastructure.out.jpa.entity.OrderItemEntity;
@@ -12,9 +13,13 @@ import com.pragma.powerup.infrastructure.out.jpa.mapper.IOrderItemEntityMapper;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderItemRepository;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderRepository;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @RequiredArgsConstructor
 public class OrderJpaAdapter implements IOrderPersistencePort {
@@ -45,5 +50,35 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
         } catch (DataIntegrityViolationException exception) {
             throw new ValidationException(ExceptionMessages.ACTIVE_ORDER_EXISTS.getMessage());
         }
+    }
+
+    @Override
+    public PageResult<Order> findByRestaurantIdAndStatus(
+            Long restaurantId, OrderStatus status, int page, int size) {
+        var orderPage = orderRepository.findByRestaurant_IdAndStatus(
+                restaurantId, status, PageRequest.of(page, size, Sort.by("createdAt").ascending()));
+        List<Long> orderIds = orderPage.getContent().stream()
+                .map(OrderEntity::getId)
+                .toList();
+        Map<Long, List<OrderItemEntity>> itemsByOrder = findItemsByOrder(orderIds);
+        List<Order> orders = orderPage.getContent().stream()
+                .map(entity -> toOrder(entity, itemsByOrder.getOrDefault(entity.getId(), List.of())))
+                .toList();
+        return new PageResult<>(orders, orderPage.getNumber(), orderPage.getSize(),
+                orderPage.getTotalElements(), orderPage.getTotalPages());
+    }
+
+    private Map<Long, List<OrderItemEntity>> findItemsByOrder(List<Long> orderIds) {
+        if (orderIds.isEmpty()) {
+            return Map.of();
+        }
+        return itemRepository.findByOrder_IdIn(orderIds).stream()
+                .collect(Collectors.groupingBy(item -> item.getOrder().getId()));
+    }
+
+    private Order toOrder(OrderEntity entity, List<OrderItemEntity> items) {
+        Order order = orderMapper.toDomain(entity);
+        order.setItems(itemMapper.toDomainList(items));
+        return order;
     }
 }

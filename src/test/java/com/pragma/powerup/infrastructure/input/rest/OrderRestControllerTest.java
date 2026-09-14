@@ -4,10 +4,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import com.pragma.powerup.application.dto.response.OrderItemResponseDto;
 import com.pragma.powerup.application.dto.response.OrderResponseDto;
+import com.pragma.powerup.application.dto.response.PageMetadataDto;
+import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.handler.IOrderHandler;
 import com.pragma.powerup.domain.enums.OrderStatus;
 import com.pragma.powerup.infrastructure.configuration.SecurityConfiguration;
@@ -62,9 +65,55 @@ class OrderRestControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void listsPaginatedOrdersWithAllFieldsAsEmployee() throws Exception {
+        OrderResponseDto order = new OrderResponseDto(
+                30L, 20L, 5L, OrderStatus.PENDING, Instant.parse("2026-09-13T12:00:00Z"),
+                List.of(new OrderItemResponseDto(10L, 2)));
+        when(handler.getOrdersByStatus(OrderStatus.PENDING, 1, 5)).thenReturn(
+                new PageResponseDto<>(List.of(order), new PageMetadataDto(1, 5, 6, 2)));
+
+        mvc.perform(get("/orders")
+                        .with(employeeJwt())
+                        .param("status", "PENDING")
+                        .param("page", "1")
+                        .param("size", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data[0].id").value(30))
+                .andExpect(jsonPath("$.data[0].customerId").value(20))
+                .andExpect(jsonPath("$.data[0].restaurantId").value(5))
+                .andExpect(jsonPath("$.data[0].status").value("PENDING"))
+                .andExpect(jsonPath("$.data[0].createdAt").exists())
+                .andExpect(jsonPath("$.data[0].items[0].dishId").value(10))
+                .andExpect(jsonPath("$.data[0].items[0].quantity").value(2))
+                .andExpect(jsonPath("$.meta.totalElements").value(6));
+    }
+
+    @Test
+    void rejectsInvalidFilterAndNonEmployeeRole() throws Exception {
+        mvc.perform(get("/orders").with(employeeJwt()).param("status", "UNKNOWN"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.message").value("Request parameter has an invalid format"));
+
+        mvc.perform(get("/orders").with(employeeJwt()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.message").value(org.hamcrest.Matchers.containsString(
+                        "Order status is required")));
+
+        mvc.perform(get("/orders").with(customerJwt()).param("status", "PENDING"))
+                .andExpect(status().isForbidden());
+    }
+
     private org.springframework.test.web.servlet.request.RequestPostProcessor customerJwt() {
         return jwt().jwt(token -> token.subject("20").claim("role", "CUSTOMER"))
                 .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
+    }
+
+    private org.springframework.test.web.servlet.request.RequestPostProcessor employeeJwt() {
+        return jwt().jwt(token -> token.subject("30")
+                        .claim("role", "EMPLOYEE")
+                        .claim("restaurantId", 5L))
+                .authorities(new SimpleGrantedAuthority("ROLE_EMPLOYEE"));
     }
 
     private String validBody() {

@@ -9,6 +9,48 @@ security:
   - bearerAuth: []
 paths:
   /orders:
+    get:
+      operationId: getOrdersByStatus
+      summary: Listar pedidos por estado
+      description: Lista los pedidos del restaurante del empleado autenticado.
+      parameters:
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - IN_PREPARATION
+              - READY
+              - DELIVERED
+              - CANCELED
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Pedidos del restaurante filtrados por estado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPage'
+        '400':
+          description: Estado o paginación inválidos
+        '401':
+          description: Token ausente, inválido o sin restaurante asociado
+        '403':
+          description: Se requiere rol EMPLOYEE
     post:
       operationId: createOrder
       summary: Crear un pedido
@@ -377,6 +419,18 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/OrderResponse'
+    OrderPage:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderResponse'
+        meta:
+          $ref: '#/components/schemas/PageMetadata'
     RestaurantRequest:
       type: object
       required:

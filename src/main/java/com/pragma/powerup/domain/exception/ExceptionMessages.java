@@ -21,6 +21,8 @@ public enum ExceptionMessages {
     INVALID_ORDER_QUANTITY("Dish quantity must be positive"),
     DUPLICATED_ORDER_DISH("A dish cannot be repeated in the same order"),
     INVALID_ORDER_DISH("All dishes must be active and belong to the selected restaurant"),
+    INVALID_PARAMETER_TYPE("Request parameter has an invalid format"),
+    EMPLOYEE_RESTAURANT_NOT_ASSIGNED("The authenticated employee is not assigned to a restaurant"),
     TRACEABILITY_SERVICE_UNAVAILABLE("Traceability service is unavailable");
 
     private final String message;

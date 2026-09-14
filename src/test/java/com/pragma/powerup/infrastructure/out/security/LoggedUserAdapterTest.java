@@ -23,10 +23,11 @@ class LoggedUserAdapterTest {
     @Test
     void returnsAuthenticatedUserIdentifier() {
         Jwt jwt = new Jwt("token", Instant.now(), Instant.now().plusSeconds(60),
-                Map.of("alg", "none"), Map.of("sub", "7"));
+                Map.of("alg", "none"), Map.of("sub", "7", "restaurantId", 5L));
         SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
 
         assertThat(adapter.getUserId()).isEqualTo(7L);
+        assertThat(adapter.getRestaurantId()).isEqualTo(5L);
     }
 
     @Test
