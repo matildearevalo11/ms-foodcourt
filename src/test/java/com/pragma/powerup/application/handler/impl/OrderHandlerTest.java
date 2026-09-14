@@ -27,7 +27,7 @@ class OrderHandlerTest {
     @Test
     void mapsPaginatedOrdersAndMetadata() {
         Order order = new Order();
-        OrderResponseDto response = new OrderResponseDto(null, null, null, null, null, List.of());
+        OrderResponseDto response = new OrderResponseDto(null, null, null, null, null, null, List.of());
         when(servicePort.getOrdersByStatus(OrderStatus.PENDING, 1, 5))
                 .thenReturn(new PageResult<>(List.of(order), 1, 5, 6, 2));
         when(responseMapper.toResponseList(List.of(order))).thenReturn(List.of(response));

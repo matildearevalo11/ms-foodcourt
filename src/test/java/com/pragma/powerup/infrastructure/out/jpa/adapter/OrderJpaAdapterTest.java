@@ -16,6 +16,7 @@ import com.pragma.powerup.infrastructure.out.jpa.mapper.IOrderItemEntityMapper;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderItemRepository;
 import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderRepository;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -37,7 +38,7 @@ class OrderJpaAdapterTest {
 
     @Test
     void savesOrderAndItsItems() {
-        Order order = new Order(null, 20L, 5L, OrderStatus.PENDING, null,
+        Order order = new Order(null, 20L, 5L, null, OrderStatus.PENDING, null,
                 List.of(new OrderItem(null, 10L, 2)));
         OrderEntity entity = new OrderEntity();
         OrderItemEntity item = new OrderItemEntity();
@@ -59,7 +60,7 @@ class OrderJpaAdapterTest {
 
     @Test
     void translatesConcurrentActiveOrderConflict() {
-        Order order = new Order(null, 20L, 5L, OrderStatus.PENDING, null, List.of());
+        Order order = new Order(null, 20L, 5L, null, OrderStatus.PENDING, null, List.of());
         OrderEntity entity = new OrderEntity();
         when(orderMapper.toEntity(order)).thenReturn(entity);
         when(orderRepository.saveAndFlush(entity)).thenThrow(new DataIntegrityViolationException("duplicate"));
@@ -86,6 +87,32 @@ class OrderJpaAdapterTest {
         assertThat(result.content()).containsExactly(order);
         assertThat(result.content().getFirst().getItems()).containsExactly(orderItem);
         assertThat(result.totalElements()).isEqualTo(1);
+    }
+
+    @Test
+    void assignsOrderAtomicallyAndLoadsItsItems() {
+        OrderEntity entity = new OrderEntity();
+        entity.setId(30L);
+        OrderItemEntity item = new OrderItemEntity();
+        Order assignedOrder = new Order();
+        when(orderRepository.assignIfAvailable(30L, 5L, 40L,
+                OrderStatus.PENDING, OrderStatus.IN_PREPARATION)).thenReturn(1);
+        when(orderRepository.findById(30L)).thenReturn(Optional.of(entity));
+        when(itemRepository.findByOrder_IdIn(List.of(30L))).thenReturn(List.of(item));
+        when(orderMapper.toDomain(entity)).thenReturn(assignedOrder);
+        when(itemMapper.toDomainList(List.of(item))).thenReturn(List.of(new OrderItem(null, 10L, 2)));
+
+        Optional<Order> result = adapter().assignPendingOrder(30L, 5L, 40L);
+
+        assertThat(result).containsSame(assignedOrder);
+        assertThat(assignedOrder.getItems()).hasSize(1);
+    }
+
+    @Test
+    void doesNotLoadOrderWhenAssignmentIsUnavailable() {
+        Optional<Order> result = adapter().assignPendingOrder(30L, 5L, 40L);
+
+        assertThat(result).isEmpty();
     }
 
     private OrderJpaAdapter adapter() {

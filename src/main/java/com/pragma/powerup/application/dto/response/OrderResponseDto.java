@@ -4,5 +4,5 @@ import com.pragma.powerup.domain.enums.OrderStatus;
 import java.time.Instant;
 import java.util.List;
 
-public record OrderResponseDto(Long id, Long customerId, Long restaurantId, OrderStatus status,
+public record OrderResponseDto(Long id, Long customerId, Long restaurantId, Long assignedEmployeeId, OrderStatus status,
         Instant createdAt, List<OrderItemResponseDto> items) { }

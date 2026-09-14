@@ -34,7 +34,7 @@ class TraceabilityRestAdapterTest {
                         """))
                 .andRespond(withSuccess());
 
-        adapter.registerPendingOrder(order());
+        adapter.registerStatusChange(order(), null, null);
 
         server.verify();
     }
@@ -44,12 +44,29 @@ class TraceabilityRestAdapterTest {
         server.expect(once(), requestTo("http://traceability.test/api/v1/traceability"))
                 .andRespond(withServerError());
 
-        assertThatThrownBy(() -> adapter.registerPendingOrder(order()))
+        assertThatThrownBy(() -> adapter.registerStatusChange(order(), null, null))
                 .isInstanceOf(ExternalServiceException.class);
         server.verify();
     }
 
+    @Test
+    void registersEmployeeAssignment() {
+        Order order = order();
+        order.setAssignedEmployeeId(40L);
+        order.setStatus(OrderStatus.IN_PREPARATION);
+        server.expect(once(), requestTo("http://traceability.test/api/v1/traceability"))
+                .andExpect(content().json("""
+                        {"orderId":30,"customerId":20,"restaurantId":5,"employeeId":40,
+                        "previousStatus":"PENDING","newStatus":"IN_PREPARATION"}
+                        """))
+                .andRespond(withSuccess());
+
+        adapter.registerStatusChange(order, OrderStatus.PENDING, 40L);
+
+        server.verify();
+    }
+
     private Order order() {
-        return new Order(30L, 20L, 5L, OrderStatus.PENDING, null, null);
+        return new Order(30L, 20L, 5L, null, OrderStatus.PENDING, null, null);
     }
 }

@@ -82,6 +82,34 @@ paths:
           description: Restaurante inexistente
         '503':
           description: El servicio de trazabilidad no está disponible
+  /orders/{orderId}/assignment:
+    patch:
+      operationId: assignOrder
+      summary: Asignarse a un pedido
+      description: Asigna el empleado autenticado a un pedido pendiente de su restaurante y lo cambia a en preparación.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '200':
+          description: Pedido asignado y cambiado a en preparación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseEnvelope'
+        '400':
+          description: El pedido no está pendiente, ya fue asignado o pertenece a otro restaurante
+        '401':
+          description: Token ausente, inválido o sin restaurante asociado
+        '403':
+          description: Se requiere rol EMPLOYEE
+        '503':
+          description: El servicio de trazabilidad no está disponible
   /restaurants:
     get:
       operationId: getRestaurants
@@ -401,10 +429,18 @@ components:
         restaurantId:
           type: integer
           format: int64
+        assignedEmployeeId:
+          type: integer
+          format: int64
+          nullable: true
         status:
           type: string
           enum:
             - PENDING
+            - IN_PREPARATION
+            - READY
+            - DELIVERED
+            - CANCELED
         createdAt:
           type: string
           format: date-time

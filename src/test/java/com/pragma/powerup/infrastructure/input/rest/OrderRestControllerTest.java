@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import com.pragma.powerup.application.dto.response.OrderItemResponseDto;
@@ -38,7 +39,7 @@ class OrderRestControllerTest {
     @Test
     void createsOrderAsCustomer() throws Exception {
         when(handler.createOrder(any())).thenReturn(new OrderResponseDto(
-                30L, 20L, 5L, OrderStatus.PENDING, Instant.parse("2026-09-13T12:00:00Z"),
+                30L, 20L, 5L, null, OrderStatus.PENDING, Instant.parse("2026-09-13T12:00:00Z"),
                 List.of(new OrderItemResponseDto(10L, 2))));
 
         mvc.perform(post("/orders")
@@ -68,7 +69,7 @@ class OrderRestControllerTest {
     @Test
     void listsPaginatedOrdersWithAllFieldsAsEmployee() throws Exception {
         OrderResponseDto order = new OrderResponseDto(
-                30L, 20L, 5L, OrderStatus.PENDING, Instant.parse("2026-09-13T12:00:00Z"),
+                30L, 20L, 5L, null, OrderStatus.PENDING, Instant.parse("2026-09-13T12:00:00Z"),
                 List.of(new OrderItemResponseDto(10L, 2)));
         when(handler.getOrdersByStatus(OrderStatus.PENDING, 1, 5)).thenReturn(
                 new PageResponseDto<>(List.of(order), new PageMetadataDto(1, 5, 6, 2)));
@@ -101,6 +102,24 @@ class OrderRestControllerTest {
                         "Order status is required")));
 
         mvc.perform(get("/orders").with(customerJwt()).param("status", "PENDING"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void assignsOrderAsEmployee() throws Exception {
+        when(handler.assignOrder(30L)).thenReturn(new OrderResponseDto(
+                30L, 20L, 5L, 40L, OrderStatus.IN_PREPARATION,
+                Instant.parse("2026-09-13T12:00:00Z"), List.of(new OrderItemResponseDto(10L, 2))));
+
+        mvc.perform(patch("/orders/30/assignment").with(employeeJwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.assignedEmployeeId").value(40))
+                .andExpect(jsonPath("$.data.status").value("IN_PREPARATION"));
+    }
+
+    @Test
+    void rejectsAssignmentFromNonEmployee() throws Exception {
+        mvc.perform(patch("/orders/30/assignment").with(customerJwt()))
                 .andExpect(status().isForbidden());
     }
 

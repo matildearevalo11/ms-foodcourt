@@ -39,13 +39,22 @@ public class OrderUseCase implements IOrderServicePort {
         order.setStatus(OrderStatus.PENDING);
         order.setCreatedAt(Instant.now());
         Order savedOrder = orderPersistencePort.save(order);
-        traceabilityPort.registerPendingOrder(savedOrder);
+        traceabilityPort.registerStatusChange(savedOrder, null, null);
         return savedOrder;
     }
 
     @Override
     public PageResult<Order> getOrdersByStatus(OrderStatus status, int page, int size) {
         return orderPersistencePort.findByRestaurantIdAndStatus(loggedUserPort.getRestaurantId(), status, page, size);
+    }
+
+    @Override
+    public Order assignOrder(Long orderId) {
+        Long employeeId = loggedUserPort.getUserId();
+        Order order = orderPersistencePort.assignPendingOrder(orderId, loggedUserPort.getRestaurantId(), employeeId)
+                .orElseThrow(() -> new ValidationException(ExceptionMessages.ORDER_NOT_AVAILABLE_FOR_ASSIGNMENT.getMessage()));
+        traceabilityPort.registerStatusChange(order, OrderStatus.PENDING, employeeId);
+        return order;
     }
 
     private void validateActiveOrder(Long customerId) {

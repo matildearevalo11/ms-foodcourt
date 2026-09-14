@@ -14,6 +14,7 @@ import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderItemRepository
 import com.pragma.powerup.infrastructure.out.jpa.repository.IOrderRepository;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +67,17 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
                 .toList();
         return new PageResult<>(orders, orderPage.getNumber(), orderPage.getSize(),
                 orderPage.getTotalElements(), orderPage.getTotalPages());
+    }
+
+    @Override
+    public Optional<Order> assignPendingOrder(Long orderId, Long restaurantId, Long employeeId) {
+        int updatedOrders = orderRepository.assignIfAvailable(orderId, restaurantId, employeeId,
+                OrderStatus.PENDING, OrderStatus.IN_PREPARATION);
+        if (updatedOrders == 0) {
+            return Optional.empty();
+        }
+        return orderRepository.findById(orderId)
+                .map(entity -> toOrder(entity, itemRepository.findByOrder_IdIn(List.of(orderId))));
     }
 
     private Map<Long, List<OrderItemEntity>> findItemsByOrder(List<Long> orderIds) {

@@ -65,7 +65,7 @@ class OrderUseCaseTest {
         assertThat(result.getCustomerId()).isEqualTo(20L);
         assertThat(result.getStatus()).isEqualTo(OrderStatus.PENDING);
         assertThat(result.getCreatedAt()).isNotNull();
-        verify(traceabilityPort).registerPendingOrder(result);
+        verify(traceabilityPort).registerStatusChange(result, null, null);
     }
 
     @Test
@@ -92,7 +92,7 @@ class OrderUseCaseTest {
                 .isInstanceOf(ValidationException.class);
 
         verify(orderPersistencePort, never()).save(any());
-        verify(traceabilityPort, never()).registerPendingOrder(any());
+        verify(traceabilityPort, never()).registerStatusChange(any(), any(), any());
     }
 
     @Test
@@ -121,8 +121,37 @@ class OrderUseCaseTest {
         assertThat(result).isSameAs(expected);
     }
 
+    @Test
+    void assignsPendingOrderToAuthenticatedEmployeeAndRegistersTraceability() {
+        Order assignedOrder = order(List.of(new OrderItem(null, 10L, 2)));
+        assignedOrder.setId(30L);
+        assignedOrder.setAssignedEmployeeId(40L);
+        assignedOrder.setStatus(OrderStatus.IN_PREPARATION);
+        when(loggedUserPort.getUserId()).thenReturn(40L);
+        when(loggedUserPort.getRestaurantId()).thenReturn(5L);
+        when(orderPersistencePort.assignPendingOrder(30L, 5L, 40L))
+                .thenReturn(Optional.of(assignedOrder));
+
+        Order result = useCase.assignOrder(30L);
+
+        assertThat(result).isSameAs(assignedOrder);
+        verify(traceabilityPort).registerStatusChange(assignedOrder, OrderStatus.PENDING, 40L);
+    }
+
+    @Test
+    void rejectsUnavailableOrderWithoutRegisteringTraceability() {
+        when(loggedUserPort.getUserId()).thenReturn(40L);
+        when(loggedUserPort.getRestaurantId()).thenReturn(5L);
+        when(orderPersistencePort.assignPendingOrder(30L, 5L, 40L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> useCase.assignOrder(30L))
+                .isInstanceOf(ValidationException.class);
+
+        verify(traceabilityPort, never()).registerStatusChange(any(), any(), any());
+    }
+
     private Order order(List<OrderItem> items) {
-        return new Order(null, null, 5L, null, null, items);
+        return new Order(null, null, 5L, null, null, null, items);
     }
 
     private Dish dish(Long id, Long restaurantId, boolean active) {

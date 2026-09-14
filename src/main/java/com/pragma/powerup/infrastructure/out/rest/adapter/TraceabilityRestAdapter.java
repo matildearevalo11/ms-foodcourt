@@ -2,6 +2,7 @@ package com.pragma.powerup.infrastructure.out.rest.adapter;
 
 import com.pragma.powerup.domain.exception.ExceptionMessages;
 import com.pragma.powerup.domain.exception.ExternalServiceException;
+import com.pragma.powerup.domain.enums.OrderStatus;
 import com.pragma.powerup.domain.model.Order;
 import com.pragma.powerup.domain.spi.ITraceabilityPort;
 import com.pragma.powerup.infrastructure.out.rest.dto.TraceabilityRequest;
@@ -14,12 +15,12 @@ public class TraceabilityRestAdapter implements ITraceabilityPort {
     private final RestClient restClient;
 
     @Override
-    public void registerPendingOrder(Order order) {
+    public void registerStatusChange(Order order, OrderStatus previousStatus, Long employeeId) {
         try {
             restClient.post()
                     .uri("/traceability")
                     .body(new TraceabilityRequest(order.getId(), order.getCustomerId(), order.getRestaurantId(),
-                            null, order.getStatus()))
+                            employeeId, previousStatus, order.getStatus()))
                     .retrieve()
                     .toBodilessEntity();
         } catch (RestClientException exception) {
