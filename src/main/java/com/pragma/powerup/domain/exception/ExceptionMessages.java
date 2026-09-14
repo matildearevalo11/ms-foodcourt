@@ -15,7 +15,13 @@ public enum ExceptionMessages {
     RESTAURANT_OWNER_REQUIRED("Only the restaurant owner can manage its dishes"),
     AUTHENTICATED_USER_NOT_FOUND("Authenticated user not found"),
     INVALID_AUTHENTICATED_USER_ID("Invalid authenticated user identifier"),
-    ACCESS_DENIED("The authenticated user does not have permission to perform this action");
+    ACCESS_DENIED("The authenticated user does not have permission to perform this action"),
+    ACTIVE_ORDER_EXISTS("The customer already has an order in process"),
+    ORDER_ITEMS_REQUIRED("Order must contain at least one dish"),
+    INVALID_ORDER_QUANTITY("Dish quantity must be positive"),
+    DUPLICATED_ORDER_DISH("A dish cannot be repeated in the same order"),
+    INVALID_ORDER_DISH("All dishes must be active and belong to the selected restaurant"),
+    TRACEABILITY_SERVICE_UNAVAILABLE("Traceability service is unavailable");
 
     private final String message;
 }

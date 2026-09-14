@@ -8,6 +8,38 @@ servers:
 security:
   - bearerAuth: []
 paths:
+  /orders:
+    post:
+      operationId: createOrder
+      summary: Crear un pedido
+      description: Crea un pedido en estado pendiente con platos activos de un mismo restaurante.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '201':
+          description: Pedido creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseEnvelope'
+        '400':
+          description: Pedido inválido o el cliente ya tiene un pedido en proceso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere rol CUSTOMER
+        '404':
+          description: Restaurante inexistente
+        '503':
+          description: El servicio de trazabilidad no está disponible
   /restaurants:
     get:
       operationId: getRestaurants
@@ -277,6 +309,74 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    OrderItemRequest:
+      type: object
+      required:
+        - dishId
+        - quantity
+      properties:
+        dishId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 10
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+    OrderRequest:
+      type: object
+      required:
+        - restaurantId
+        - items
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 5
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+    OrderResponse:
+      type: object
+      required:
+        - id
+        - customerId
+        - restaurantId
+        - status
+        - createdAt
+        - items
+      properties:
+        id:
+          type: integer
+          format: int64
+        customerId:
+          type: integer
+          format: int64
+        restaurantId:
+          type: integer
+          format: int64
+        status:
+          type: string
+          enum:
+            - PENDING
+        createdAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+    OrderResponseEnvelope:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/OrderResponse'
     RestaurantRequest:
       type: object
       required:
