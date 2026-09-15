@@ -115,6 +115,23 @@ class OrderJpaAdapterTest {
         assertThat(result).isEmpty();
     }
 
+    @Test
+    void marksAssignedOrderReadyAtomically() {
+        OrderEntity entity = new OrderEntity();
+        entity.setId(30L);
+        Order readyOrder = new Order();
+        when(orderRepository.markReadyIfAssigned(30L, 5L, 40L, "482913",
+                OrderStatus.IN_PREPARATION, OrderStatus.READY)).thenReturn(1);
+        when(orderRepository.findById(30L)).thenReturn(Optional.of(entity));
+        when(itemRepository.findByOrder_IdIn(List.of(30L))).thenReturn(List.of());
+        when(orderMapper.toDomain(entity)).thenReturn(readyOrder);
+        when(itemMapper.toDomainList(List.of())).thenReturn(List.of());
+
+        Optional<Order> result = adapter().markOrderReady(30L, 5L, 40L, "482913");
+
+        assertThat(result).containsSame(readyOrder);
+    }
+
     private OrderJpaAdapter adapter() {
         return new OrderJpaAdapter(orderRepository, itemRepository, orderMapper, itemMapper);
     }

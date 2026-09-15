@@ -14,6 +14,9 @@ import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.spi.ITraceabilityPort;
+import com.pragma.powerup.domain.spi.INotificationPort;
+import com.pragma.powerup.domain.spi.IPinGeneratorPort;
+import com.pragma.powerup.domain.spi.IUserContactPort;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.List;
@@ -28,6 +31,9 @@ public class OrderUseCase implements IOrderServicePort {
     private final IRestaurantPersistencePort restaurantPersistencePort;
     private final ILoggedUserPort loggedUserPort;
     private final ITraceabilityPort traceabilityPort;
+    private final IPinGeneratorPort pinGeneratorPort;
+    private final IUserContactPort userContactPort;
+    private final INotificationPort notificationPort;
 
     @Override
     public Order createOrder(Order order) {
@@ -54,6 +60,18 @@ public class OrderUseCase implements IOrderServicePort {
         Order order = orderPersistencePort.assignPendingOrder(orderId, loggedUserPort.getRestaurantId(), employeeId)
                 .orElseThrow(() -> new ValidationException(ExceptionMessages.ORDER_NOT_AVAILABLE_FOR_ASSIGNMENT.getMessage()));
         traceabilityPort.registerStatusChange(order, OrderStatus.PENDING, employeeId);
+        return order;
+    }
+
+    @Override
+    public Order markOrderReady(Long orderId) {
+        Long employeeId = loggedUserPort.getUserId();
+        String securityPin = pinGeneratorPort.generate();
+        Order order = orderPersistencePort.markOrderReady(orderId, loggedUserPort.getRestaurantId(), employeeId, securityPin)
+                .orElseThrow(() -> new ValidationException(ExceptionMessages.ORDER_NOT_AVAILABLE_TO_MARK_READY.getMessage()));
+        String cellphone = userContactPort.getCustomerCellphone(order.getCustomerId());
+        notificationPort.notifyOrderReady(cellphone, securityPin);
+        traceabilityPort.registerStatusChange(order, OrderStatus.IN_PREPARATION, employeeId);
         return order;
     }
 

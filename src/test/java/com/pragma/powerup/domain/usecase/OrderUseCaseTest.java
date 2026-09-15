@@ -18,6 +18,9 @@ import com.pragma.powerup.domain.spi.ILoggedUserPort;
 import com.pragma.powerup.domain.spi.IOrderPersistencePort;
 import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.spi.ITraceabilityPort;
+import com.pragma.powerup.domain.spi.INotificationPort;
+import com.pragma.powerup.domain.spi.IPinGeneratorPort;
+import com.pragma.powerup.domain.spi.IUserContactPort;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -39,13 +42,20 @@ class OrderUseCaseTest {
     ILoggedUserPort loggedUserPort;
     @Mock
     ITraceabilityPort traceabilityPort;
+    @Mock
+    IPinGeneratorPort pinGeneratorPort;
+    @Mock
+    IUserContactPort userContactPort;
+    @Mock
+    INotificationPort notificationPort;
 
     private OrderUseCase useCase;
 
     @BeforeEach
     void setUp() {
         useCase = new OrderUseCase(orderPersistencePort, dishPersistencePort,
-                restaurantPersistencePort, loggedUserPort, traceabilityPort);
+                restaurantPersistencePort, loggedUserPort, traceabilityPort,
+                pinGeneratorPort, userContactPort, notificationPort);
     }
 
     @Test
@@ -147,6 +157,40 @@ class OrderUseCaseTest {
         assertThatThrownBy(() -> useCase.assignOrder(30L))
                 .isInstanceOf(ValidationException.class);
 
+        verify(traceabilityPort, never()).registerStatusChange(any(), any(), any());
+    }
+
+    @Test
+    void marksAssignedOrderReadyAndNotifiesCustomer() {
+        Order readyOrder = order(List.of(new OrderItem(null, 10L, 2)));
+        readyOrder.setId(30L);
+        readyOrder.setCustomerId(20L);
+        readyOrder.setAssignedEmployeeId(40L);
+        readyOrder.setStatus(OrderStatus.READY);
+        when(loggedUserPort.getUserId()).thenReturn(40L);
+        when(loggedUserPort.getRestaurantId()).thenReturn(5L);
+        when(pinGeneratorPort.generate()).thenReturn("482913");
+        when(orderPersistencePort.markOrderReady(30L, 5L, 40L, "482913"))
+                .thenReturn(Optional.of(readyOrder));
+        when(userContactPort.getCustomerCellphone(20L)).thenReturn("+573001234567");
+
+        Order result = useCase.markOrderReady(30L);
+
+        assertThat(result).isSameAs(readyOrder);
+        verify(notificationPort).notifyOrderReady("+573001234567", "482913");
+        verify(traceabilityPort).registerStatusChange(readyOrder, OrderStatus.IN_PREPARATION, 40L);
+    }
+
+    @Test
+    void rejectsOrderThatCannotBeMarkedReadyWithoutNotifying() {
+        when(loggedUserPort.getUserId()).thenReturn(40L);
+        when(loggedUserPort.getRestaurantId()).thenReturn(5L);
+        when(pinGeneratorPort.generate()).thenReturn("482913");
+
+        assertThatThrownBy(() -> useCase.markOrderReady(30L))
+                .isInstanceOf(ValidationException.class);
+
+        verify(notificationPort, never()).notifyOrderReady(any(), any());
         verify(traceabilityPort, never()).registerStatusChange(any(), any(), any());
     }
 

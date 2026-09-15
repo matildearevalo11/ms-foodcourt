@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface IOrderEntityMapper {
     @Mapping(target = "restaurant.id", source = "restaurantId")
+    @Mapping(target = "securityPin", ignore = true)
     @Mapping(target = "activeOrder", ignore = true)
     OrderEntity toEntity(Order order);
 

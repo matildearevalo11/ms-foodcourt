@@ -44,6 +44,7 @@ springdoc:
 clients:
   users:
     base-url: ${USERS_SERVICE_URL:http://localhost:8081/api/v1}
+    api-key: ${USERS_INTERNAL_API_KEY:1234567890abcde}
     connect-timeout: ${USERS_CONNECT_TIMEOUT:2s}
     read-timeout: ${USERS_READ_TIMEOUT:3s}
   traceability:
@@ -51,5 +52,10 @@ clients:
     api-key: ${TRACEABILITY_API_KEY:1234567890abcde}
     connect-timeout: ${TRACEABILITY_CONNECT_TIMEOUT:2s}
     read-timeout: ${TRACEABILITY_READ_TIMEOUT:3s}
+  messaging:
+    base-url: ${MESSAGING_SERVICE_URL:http://localhost:8084/api/v1}
+    api-key: ${MESSAGING_INTERNAL_API_KEY:foodcourt-messaging-local-key}
+    connect-timeout: ${MESSAGING_CONNECT_TIMEOUT:2s}
+    read-timeout: ${MESSAGING_READ_TIMEOUT:3s}
 jwt:
   secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef}

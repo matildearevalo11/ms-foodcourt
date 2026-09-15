@@ -55,4 +55,10 @@ public class OrderRestController {
     public DefaultResponse<OrderResponseDto> assignOrder(@PathVariable Long orderId) {
         return new DefaultResponse<>(handler.assignOrder(orderId));
     }
+
+    @PatchMapping(value = "/{orderId}/ready", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.EMPLOYEE)
+    public DefaultResponse<OrderResponseDto> markOrderReady(@PathVariable Long orderId) {
+        return new DefaultResponse<>(handler.markOrderReady(orderId));
+    }
 }

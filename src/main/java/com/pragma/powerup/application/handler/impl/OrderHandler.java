@@ -39,4 +39,10 @@ public class OrderHandler implements IOrderHandler {
     public OrderResponseDto assignOrder(Long orderId) {
         return responseMapper.toResponse(servicePort.assignOrder(orderId));
     }
+
+    @Override
+    @Transactional
+    public OrderResponseDto markOrderReady(Long orderId) {
+        return responseMapper.toResponse(servicePort.markOrderReady(orderId));
+    }
 }

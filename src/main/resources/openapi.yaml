@@ -110,6 +110,34 @@ paths:
           description: Se requiere rol EMPLOYEE
         '503':
           description: El servicio de trazabilidad no está disponible
+  /orders/{orderId}/ready:
+    patch:
+      operationId: markOrderReady
+      summary: Marcar un pedido como listo
+      description: Cambia a listo un pedido en preparación asignado al empleado y envía al cliente el PIN de recogida por SMS.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '200':
+          description: Pedido listo y cliente notificado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseEnvelope'
+        '400':
+          description: El pedido no está en preparación, no está asignado al empleado o pertenece a otro restaurante
+        '401':
+          description: Token ausente, inválido o sin restaurante asociado
+        '403':
+          description: Se requiere rol EMPLOYEE
+        '503':
+          description: No fue posible consultar el contacto, enviar el SMS o registrar la trazabilidad
   /restaurants:
     get:
       operationId: getRestaurants

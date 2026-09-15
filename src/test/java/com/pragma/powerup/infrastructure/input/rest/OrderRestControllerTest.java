@@ -123,6 +123,23 @@ class OrderRestControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void marksOrderReadyAsEmployee() throws Exception {
+        when(handler.markOrderReady(30L)).thenReturn(new OrderResponseDto(
+                30L, 20L, 5L, 40L, OrderStatus.READY,
+                Instant.parse("2026-09-13T12:00:00Z"), List.of(new OrderItemResponseDto(10L, 2))));
+
+        mvc.perform(patch("/orders/30/ready").with(employeeJwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("READY"));
+    }
+
+    @Test
+    void rejectsReadyTransitionFromNonEmployee() throws Exception {
+        mvc.perform(patch("/orders/30/ready").with(customerJwt()))
+                .andExpect(status().isForbidden());
+    }
+
     private org.springframework.test.web.servlet.request.RequestPostProcessor customerJwt() {
         return jwt().jwt(token -> token.subject("20").claim("role", "CUSTOMER"))
                 .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER"));
