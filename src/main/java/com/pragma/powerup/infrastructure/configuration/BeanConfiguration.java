@@ -12,6 +12,7 @@ import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.spi.ITraceabilityPort;
 import com.pragma.powerup.domain.spi.INotificationPort;
 import com.pragma.powerup.domain.spi.IPinGeneratorPort;
+import com.pragma.powerup.domain.spi.IPinHashingPort;
 import com.pragma.powerup.domain.spi.IUserContactPort;
 import com.pragma.powerup.domain.usecase.DishUseCase;
 import com.pragma.powerup.domain.usecase.OrderUseCase;
@@ -25,6 +26,7 @@ import com.pragma.powerup.infrastructure.out.rest.adapter.TraceabilityRestAdapte
 import com.pragma.powerup.infrastructure.out.rest.adapter.NotificationRestAdapter;
 import com.pragma.powerup.infrastructure.out.rest.adapter.UserContactRestAdapter;
 import com.pragma.powerup.infrastructure.out.security.SecurePinGeneratorAdapter;
+import com.pragma.powerup.infrastructure.out.security.HmacPinHashingAdapter;
 import java.net.http.HttpClient;
 import java.security.SecureRandom;
 import java.time.Duration;
@@ -88,10 +90,10 @@ public class BeanConfiguration {
     IOrderServicePort orderServicePort(IOrderPersistencePort orderPersistencePort,
             IDishPersistencePort dishPersistencePort, IRestaurantPersistencePort restaurantPersistencePort,
             ILoggedUserPort loggedUserPort, ITraceabilityPort traceabilityPort,
-            IPinGeneratorPort pinGeneratorPort, IUserContactPort userContactPort,
+            IPinGeneratorPort pinGeneratorPort, IPinHashingPort pinHashingPort, IUserContactPort userContactPort,
             INotificationPort notificationPort) {
         return new OrderUseCase(orderPersistencePort, dishPersistencePort, restaurantPersistencePort,
-                loggedUserPort, traceabilityPort, pinGeneratorPort, userContactPort, notificationPort);
+                loggedUserPort, traceabilityPort, pinGeneratorPort, pinHashingPort, userContactPort, notificationPort);
     }
 
     @Bean
@@ -150,6 +152,11 @@ public class BeanConfiguration {
     @Bean
     IPinGeneratorPort pinGeneratorPort() {
         return new SecurePinGeneratorAdapter(new SecureRandom());
+    }
+
+    @Bean
+    IPinHashingPort pinHashingPort(@Value("${security.order-pin-secret}") String secret) {
+        return new HmacPinHashingAdapter(secret);
     }
 
     private RestClient internalRestClient(String baseUrl, String apiKey,

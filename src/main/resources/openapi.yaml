@@ -138,6 +138,40 @@ paths:
           description: Se requiere rol EMPLOYEE
         '503':
           description: No fue posible consultar el contacto, enviar el SMS o registrar la trazabilidad
+  /orders/{orderId}/delivery:
+    patch:
+      operationId: deliverOrder
+      summary: Entregar un pedido
+      description: Cambia a entregado un pedido listo del empleado con el PIN dado.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderDeliveryRequest'
+      responses:
+        '200':
+          description: Pedido entregado y PIN invalidado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseEnvelope'
+        '400':
+          description: El pedido no está listo, no pertenece al empleado o el PIN no coincide
+        '401':
+          description: Token ausente, inválido o sin restaurante asociado
+        '403':
+          description: Se requiere rol EMPLOYEE
+        '503':
+          description: El servicio de trazabilidad no está disponible
   /restaurants:
     get:
       operationId: getRestaurants
@@ -438,6 +472,16 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/OrderItemRequest'
+    OrderDeliveryRequest:
+      type: object
+      required:
+        - securityPin
+      additionalProperties: false
+      properties:
+        securityPin:
+          type: string
+          pattern: '^\d{6}$'
+          example: '482913'
     OrderResponse:
       type: object
       required:

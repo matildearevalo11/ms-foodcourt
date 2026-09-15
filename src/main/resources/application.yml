@@ -59,3 +59,6 @@ clients:
     read-timeout: ${MESSAGING_READ_TIMEOUT:3s}
 jwt:
   secret: ${JWT_SECRET:0123456789abcdef0123456789abcdef}
+
+security:
+  order-pin-secret: ${ORDER_PIN_SECRET:foodcourt-order-pin-secret-local-2026}

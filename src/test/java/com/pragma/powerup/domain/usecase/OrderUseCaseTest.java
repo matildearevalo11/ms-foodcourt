@@ -20,6 +20,7 @@ import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.spi.ITraceabilityPort;
 import com.pragma.powerup.domain.spi.INotificationPort;
 import com.pragma.powerup.domain.spi.IPinGeneratorPort;
+import com.pragma.powerup.domain.spi.IPinHashingPort;
 import com.pragma.powerup.domain.spi.IUserContactPort;
 import java.util.List;
 import java.util.Optional;
@@ -45,6 +46,8 @@ class OrderUseCaseTest {
     @Mock
     IPinGeneratorPort pinGeneratorPort;
     @Mock
+    IPinHashingPort pinHashingPort;
+    @Mock
     IUserContactPort userContactPort;
     @Mock
     INotificationPort notificationPort;
@@ -55,7 +58,7 @@ class OrderUseCaseTest {
     void setUp() {
         useCase = new OrderUseCase(orderPersistencePort, dishPersistencePort,
                 restaurantPersistencePort, loggedUserPort, traceabilityPort,
-                pinGeneratorPort, userContactPort, notificationPort);
+                pinGeneratorPort, pinHashingPort, userContactPort, notificationPort);
     }
 
     @Test
@@ -170,7 +173,8 @@ class OrderUseCaseTest {
         when(loggedUserPort.getUserId()).thenReturn(40L);
         when(loggedUserPort.getRestaurantId()).thenReturn(5L);
         when(pinGeneratorPort.generate()).thenReturn("482913");
-        when(orderPersistencePort.markOrderReady(30L, 5L, 40L, "482913"))
+        when(pinHashingPort.hash("482913")).thenReturn("pin-hash");
+        when(orderPersistencePort.markOrderReady(30L, 5L, 40L, "pin-hash"))
                 .thenReturn(Optional.of(readyOrder));
         when(userContactPort.getCustomerCellphone(20L)).thenReturn("+573001234567");
 
@@ -186,11 +190,42 @@ class OrderUseCaseTest {
         when(loggedUserPort.getUserId()).thenReturn(40L);
         when(loggedUserPort.getRestaurantId()).thenReturn(5L);
         when(pinGeneratorPort.generate()).thenReturn("482913");
+        when(pinHashingPort.hash("482913")).thenReturn("pin-hash");
 
         assertThatThrownBy(() -> useCase.markOrderReady(30L))
                 .isInstanceOf(ValidationException.class);
 
         verify(notificationPort, never()).notifyOrderReady(any(), any());
+        verify(traceabilityPort, never()).registerStatusChange(any(), any(), any());
+    }
+
+    @Test
+    void deliversReadyOrderWithMatchingPinAndRegistersTraceability() {
+        Order deliveredOrder = order(List.of(new OrderItem(null, 10L, 2)));
+        deliveredOrder.setId(30L);
+        deliveredOrder.setAssignedEmployeeId(40L);
+        deliveredOrder.setStatus(OrderStatus.DELIVERED);
+        when(loggedUserPort.getUserId()).thenReturn(40L);
+        when(loggedUserPort.getRestaurantId()).thenReturn(5L);
+        when(pinHashingPort.hash("482913")).thenReturn("pin-hash");
+        when(orderPersistencePort.deliverReadyOrder(30L, 5L, 40L, "pin-hash"))
+                .thenReturn(Optional.of(deliveredOrder));
+
+        Order result = useCase.deliverOrder(30L, "482913");
+
+        assertThat(result).isSameAs(deliveredOrder);
+        verify(traceabilityPort).registerStatusChange(deliveredOrder, OrderStatus.READY, 40L);
+    }
+
+    @Test
+    void rejectsDeliveryWhenStateEmployeeRestaurantOrPinDoesNotMatch() {
+        when(loggedUserPort.getUserId()).thenReturn(40L);
+        when(loggedUserPort.getRestaurantId()).thenReturn(5L);
+        when(pinHashingPort.hash("000000")).thenReturn("wrong-hash");
+
+        assertThatThrownBy(() -> useCase.deliverOrder(30L, "000000"))
+                .isInstanceOf(ValidationException.class);
+
         verify(traceabilityPort, never()).registerStatusChange(any(), any(), any());
     }
 

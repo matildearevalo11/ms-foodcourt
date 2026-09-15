@@ -132,6 +132,23 @@ class OrderJpaAdapterTest {
         assertThat(result).containsSame(readyOrder);
     }
 
+    @Test
+    void deliversReadyOrderAtomicallyAndLoadsItsItems() {
+        OrderEntity entity = new OrderEntity();
+        entity.setId(30L);
+        Order deliveredOrder = new Order();
+        when(orderRepository.deliverIfReadyAndPinMatches(30L, 5L, 40L, "pin-hash",
+                OrderStatus.READY, OrderStatus.DELIVERED)).thenReturn(1);
+        when(orderRepository.findById(30L)).thenReturn(Optional.of(entity));
+        when(itemRepository.findByOrder_IdIn(List.of(30L))).thenReturn(List.of());
+        when(orderMapper.toDomain(entity)).thenReturn(deliveredOrder);
+        when(itemMapper.toDomainList(List.of())).thenReturn(List.of());
+
+        Optional<Order> result = adapter().deliverReadyOrder(30L, 5L, 40L, "pin-hash");
+
+        assertThat(result).containsSame(deliveredOrder);
+    }
+
     private OrderJpaAdapter adapter() {
         return new OrderJpaAdapter(orderRepository, itemRepository, orderMapper, itemMapper);
     }

@@ -16,6 +16,7 @@ import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
 import com.pragma.powerup.domain.spi.ITraceabilityPort;
 import com.pragma.powerup.domain.spi.INotificationPort;
 import com.pragma.powerup.domain.spi.IPinGeneratorPort;
+import com.pragma.powerup.domain.spi.IPinHashingPort;
 import com.pragma.powerup.domain.spi.IUserContactPort;
 import java.time.Instant;
 import java.util.HashSet;
@@ -32,6 +33,7 @@ public class OrderUseCase implements IOrderServicePort {
     private final ILoggedUserPort loggedUserPort;
     private final ITraceabilityPort traceabilityPort;
     private final IPinGeneratorPort pinGeneratorPort;
+    private final IPinHashingPort pinHashingPort;
     private final IUserContactPort userContactPort;
     private final INotificationPort notificationPort;
 
@@ -67,11 +69,22 @@ public class OrderUseCase implements IOrderServicePort {
     public Order markOrderReady(Long orderId) {
         Long employeeId = loggedUserPort.getUserId();
         String securityPin = pinGeneratorPort.generate();
-        Order order = orderPersistencePort.markOrderReady(orderId, loggedUserPort.getRestaurantId(), employeeId, securityPin)
+        String securityPinHash = pinHashingPort.hash(securityPin);
+        Order order = orderPersistencePort.markOrderReady(orderId, loggedUserPort.getRestaurantId(), employeeId, securityPinHash)
                 .orElseThrow(() -> new ValidationException(ExceptionMessages.ORDER_NOT_AVAILABLE_TO_MARK_READY.getMessage()));
         String cellphone = userContactPort.getCustomerCellphone(order.getCustomerId());
         notificationPort.notifyOrderReady(cellphone, securityPin);
         traceabilityPort.registerStatusChange(order, OrderStatus.IN_PREPARATION, employeeId);
+        return order;
+    }
+
+    @Override
+    public Order deliverOrder(Long orderId, String securityPin) {
+        Long employeeId = loggedUserPort.getUserId();
+        String securityPinHash = pinHashingPort.hash(securityPin);
+        Order order = orderPersistencePort.deliverReadyOrder(orderId, loggedUserPort.getRestaurantId(), employeeId, securityPinHash)
+                .orElseThrow(() -> new ValidationException(ExceptionMessages.ORDER_NOT_AVAILABLE_FOR_DELIVERY.getMessage()));
+        traceabilityPort.registerStatusChange(order, OrderStatus.READY, employeeId);
         return order;
     }
 

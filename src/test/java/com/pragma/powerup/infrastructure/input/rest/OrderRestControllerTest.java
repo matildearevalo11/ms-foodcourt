@@ -140,6 +140,37 @@ class OrderRestControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void deliversOrderWithValidPinAsEmployee() throws Exception {
+        when(handler.deliverOrder(org.mockito.ArgumentMatchers.eq(30L), any())).thenReturn(
+                new OrderResponseDto(30L, 20L, 5L, 40L, OrderStatus.DELIVERED,
+                        Instant.parse("2026-09-13T12:00:00Z"),
+                        List.of(new OrderItemResponseDto(10L, 2))));
+
+        mvc.perform(patch("/orders/30/delivery")
+                        .with(employeeJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"securityPin\":\"482913\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DELIVERED"));
+    }
+
+    @Test
+    void validatesDeliveryPinAndRequiresEmployeeRole() throws Exception {
+        mvc.perform(patch("/orders/30/delivery")
+                        .with(employeeJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"securityPin\":\"123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.securityPin").value("Security PIN must contain 6 digits"));
+
+        mvc.perform(patch("/orders/30/delivery")
+                        .with(customerJwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"securityPin\":\"482913\"}"))
+                .andExpect(status().isForbidden());
+    }
+
     private org.springframework.test.web.servlet.request.RequestPostProcessor customerJwt() {
         return jwt().jwt(token -> token.subject("20").claim("role", "CUSTOMER"))
                 .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER"));

@@ -1,6 +1,7 @@
 package com.pragma.powerup.application.handler.impl;
 
 import com.pragma.powerup.application.dto.request.OrderRequestDto;
+import com.pragma.powerup.application.dto.request.OrderDeliveryRequestDto;
 import com.pragma.powerup.application.dto.response.OrderResponseDto;
 import com.pragma.powerup.application.dto.response.PageMetadataDto;
 import com.pragma.powerup.application.dto.response.PageResponseDto;
@@ -44,5 +45,11 @@ public class OrderHandler implements IOrderHandler {
     @Transactional
     public OrderResponseDto markOrderReady(Long orderId) {
         return responseMapper.toResponse(servicePort.markOrderReady(orderId));
+    }
+
+    @Override
+    @Transactional
+    public OrderResponseDto deliverOrder(Long orderId, OrderDeliveryRequestDto request) {
+        return responseMapper.toResponse(servicePort.deliverOrder(orderId, request.securityPin()));
     }
 }

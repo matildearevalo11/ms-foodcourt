@@ -39,7 +39,7 @@ public class OrderEntity {
     @Column(name = "assigned_employee_id")
     private Long assignedEmployeeId;
 
-    @Column(name = "security_pin", length = 6)
+    @Column(name = "security_pin", length = 64)
     private String securityPin;
 
     @Enumerated(EnumType.STRING)

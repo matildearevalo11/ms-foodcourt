@@ -81,14 +81,24 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
     }
 
     @Override
-    public Optional<Order> markOrderReady(Long orderId, Long restaurantId, Long employeeId, String securityPin) {
-        int updatedOrders = orderRepository.markReadyIfAssigned(orderId, restaurantId, employeeId, securityPin,
+    public Optional<Order> markOrderReady(Long orderId, Long restaurantId, Long employeeId, String securityPinHash) {
+        int updatedOrders = orderRepository.markReadyIfAssigned(orderId, restaurantId, employeeId, securityPinHash,
                 OrderStatus.IN_PREPARATION, OrderStatus.READY);
         if (updatedOrders == 0) {
             return Optional.empty();
         }
         return orderRepository.findById(orderId)
                 .map(entity -> toOrder(entity, itemRepository.findByOrder_IdIn(List.of(orderId))));
+    }
+
+    @Override
+    public Optional<Order> deliverReadyOrder(Long orderId, Long restaurantId, Long employeeId, String securityPinHash) {
+        int updatedOrders = orderRepository.deliverIfReadyAndPinMatches(
+                orderId, restaurantId, employeeId, securityPinHash, OrderStatus.READY, OrderStatus.DELIVERED);
+        if (updatedOrders == 0) {
+            return Optional.empty();
+        }
+        return orderRepository.findById(orderId).map(entity -> toOrder(entity, itemRepository.findByOrder_IdIn(List.of(orderId))));
     }
 
     private Map<Long, List<OrderItemEntity>> findItemsByOrder(List<Long> orderIds) {

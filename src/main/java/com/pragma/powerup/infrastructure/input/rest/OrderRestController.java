@@ -1,6 +1,7 @@
 package com.pragma.powerup.infrastructure.input.rest;
 
 import com.pragma.powerup.application.dto.request.OrderRequestDto;
+import com.pragma.powerup.application.dto.request.OrderDeliveryRequestDto;
 import com.pragma.powerup.application.dto.response.OrderResponseDto;
 import com.pragma.powerup.application.dto.response.PageResponseDto;
 import com.pragma.powerup.application.handler.IOrderHandler;
@@ -11,7 +12,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -60,5 +60,11 @@ public class OrderRestController {
     @RequireRole(RoleEnum.EMPLOYEE)
     public DefaultResponse<OrderResponseDto> markOrderReady(@PathVariable Long orderId) {
         return new DefaultResponse<>(handler.markOrderReady(orderId));
+    }
+
+    @PatchMapping(value = "/{orderId}/delivery", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.EMPLOYEE)
+    public DefaultResponse<OrderResponseDto> deliverOrder(@PathVariable Long orderId, @Valid @RequestBody OrderDeliveryRequestDto request) {
+        return new DefaultResponse<>(handler.deliverOrder(orderId, request));
     }
 }

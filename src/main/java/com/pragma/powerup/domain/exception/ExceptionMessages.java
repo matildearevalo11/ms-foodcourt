@@ -25,6 +25,7 @@ public enum ExceptionMessages {
     EMPLOYEE_RESTAURANT_NOT_ASSIGNED("The authenticated employee is not assigned to a restaurant"),
     ORDER_NOT_AVAILABLE_FOR_ASSIGNMENT("The order is not available for assignment"),
     ORDER_NOT_AVAILABLE_TO_MARK_READY("The order is not available to be marked as ready"),
+    ORDER_NOT_AVAILABLE_FOR_DELIVERY("The order cannot be delivered with the supplied PIN"),
     CUSTOMER_CONTACT_UNAVAILABLE("Customer contact information is unavailable"),
     MESSAGING_SERVICE_UNAVAILABLE("Messaging service is unavailable"),
     TRACEABILITY_SERVICE_UNAVAILABLE("Traceability service is unavailable");
