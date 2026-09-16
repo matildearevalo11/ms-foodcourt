@@ -26,6 +26,7 @@ public enum ExceptionMessages {
     ORDER_NOT_AVAILABLE_FOR_ASSIGNMENT("The order is not available for assignment"),
     ORDER_NOT_AVAILABLE_TO_MARK_READY("The order is not available to be marked as ready"),
     ORDER_NOT_AVAILABLE_FOR_DELIVERY("The order cannot be delivered with the supplied PIN"),
+    ORDER_CANNOT_BE_CANCELED("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse"),
     CUSTOMER_CONTACT_UNAVAILABLE("Customer contact information is unavailable"),
     MESSAGING_SERVICE_UNAVAILABLE("Messaging service is unavailable"),
     TRACEABILITY_SERVICE_UNAVAILABLE("Traceability service is unavailable");

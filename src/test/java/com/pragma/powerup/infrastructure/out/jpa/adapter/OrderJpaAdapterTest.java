@@ -149,6 +149,23 @@ class OrderJpaAdapterTest {
         assertThat(result).containsSame(deliveredOrder);
     }
 
+    @Test
+    void cancelsPendingOrderAtomicallyAndLoadsItsItems() {
+        OrderEntity entity = new OrderEntity();
+        entity.setId(30L);
+        Order canceledOrder = new Order();
+        when(orderRepository.cancelIfPending(30L, 20L,
+                OrderStatus.PENDING, OrderStatus.CANCELED)).thenReturn(1);
+        when(orderRepository.findById(30L)).thenReturn(Optional.of(entity));
+        when(itemRepository.findByOrder_IdIn(List.of(30L))).thenReturn(List.of());
+        when(orderMapper.toDomain(entity)).thenReturn(canceledOrder);
+        when(itemMapper.toDomainList(List.of())).thenReturn(List.of());
+
+        Optional<Order> result = adapter().cancelPendingOrder(30L, 20L);
+
+        assertThat(result).containsSame(canceledOrder);
+    }
+
     private OrderJpaAdapter adapter() {
         return new OrderJpaAdapter(orderRepository, itemRepository, orderMapper, itemMapper);
     }

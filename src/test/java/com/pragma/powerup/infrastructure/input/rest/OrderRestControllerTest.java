@@ -171,6 +171,21 @@ class OrderRestControllerTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void cancelsPendingOrderAsCustomer() throws Exception {
+        when(handler.cancelOrder(30L)).thenReturn(
+                new OrderResponseDto(30L, 20L, 5L, null, OrderStatus.CANCELED,
+                        Instant.parse("2026-09-13T12:00:00Z"),
+                        List.of(new OrderItemResponseDto(10L, 2))));
+
+        mvc.perform(patch("/orders/30/cancellation").with(customerJwt()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("CANCELED"));
+
+        mvc.perform(patch("/orders/30/cancellation").with(employeeJwt()))
+                .andExpect(status().isForbidden());
+    }
+
     private org.springframework.test.web.servlet.request.RequestPostProcessor customerJwt() {
         return jwt().jwt(token -> token.subject("20").claim("role", "CUSTOMER"))
                 .authorities(new SimpleGrantedAuthority("ROLE_CUSTOMER"));

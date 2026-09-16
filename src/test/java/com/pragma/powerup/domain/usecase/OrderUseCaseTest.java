@@ -229,6 +229,33 @@ class OrderUseCaseTest {
         verify(traceabilityPort, never()).registerStatusChange(any(), any(), any());
     }
 
+    @Test
+    void cancelsPendingOrderOwnedByCustomerAndRegistersTraceability() {
+        Order canceledOrder = order(List.of(new OrderItem(null, 10L, 2)));
+        canceledOrder.setId(30L);
+        canceledOrder.setCustomerId(20L);
+        canceledOrder.setStatus(OrderStatus.CANCELED);
+        when(loggedUserPort.getUserId()).thenReturn(20L);
+        when(orderPersistencePort.cancelPendingOrder(30L, 20L))
+                .thenReturn(Optional.of(canceledOrder));
+
+        Order result = useCase.cancelOrder(30L);
+
+        assertThat(result).isSameAs(canceledOrder);
+        verify(traceabilityPort).registerStatusChange(canceledOrder, OrderStatus.PENDING, null);
+    }
+
+    @Test
+    void rejectsCancellationWhenOrderIsNotPendingOrDoesNotBelongToCustomer() {
+        when(loggedUserPort.getUserId()).thenReturn(20L);
+
+        assertThatThrownBy(() -> useCase.cancelOrder(30L))
+                .isInstanceOf(ValidationException.class)
+                .hasMessage("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse");
+
+        verify(traceabilityPort, never()).registerStatusChange(any(), any(), any());
+    }
+
     private Order order(List<OrderItem> items) {
         return new Order(null, null, 5L, null, null, null, items);
     }

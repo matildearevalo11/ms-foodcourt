@@ -67,4 +67,10 @@ public class OrderRestController {
     public DefaultResponse<OrderResponseDto> deliverOrder(@PathVariable Long orderId, @Valid @RequestBody OrderDeliveryRequestDto request) {
         return new DefaultResponse<>(handler.deliverOrder(orderId, request));
     }
+
+    @PatchMapping(value = "/{orderId}/cancellation", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequireRole(RoleEnum.CUSTOMER)
+    public DefaultResponse<OrderResponseDto> cancelOrder(@PathVariable Long orderId) {
+        return new DefaultResponse<>(handler.cancelOrder(orderId));
+    }
 }

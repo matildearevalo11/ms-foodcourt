@@ -172,6 +172,34 @@ paths:
           description: Se requiere rol EMPLOYEE
         '503':
           description: El servicio de trazabilidad no está disponible
+  /orders/{orderId}/cancellation:
+    patch:
+      operationId: cancelOrder
+      summary: Cancelar un pedido
+      description: Cancela un pedido unicamente en estado pendiente.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '200':
+          description: Pedido cancelado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseEnvelope'
+        '400':
+          description: Lo sentimos, tu pedido ya está en preparación y no puede cancelarse
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere rol CUSTOMER
+        '503':
+          description: El servicio de trazabilidad no está disponible
   /restaurants:
     get:
       operationId: getRestaurants
