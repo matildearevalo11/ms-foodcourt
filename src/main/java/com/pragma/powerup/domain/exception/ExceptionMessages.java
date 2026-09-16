@@ -1,0 +1,35 @@
+package com.pragma.powerup.domain.exception;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
+@Getter
+@AllArgsConstructor
+public enum ExceptionMessages {
+    OWNER_ROLE_REQUIRED("The supplied user does not exist or does not have the OWNER role"),
+    NIT_ALREADY_EXISTS("A restaurant with this NIT already exists"),
+    USERS_SERVICE_UNAVAILABLE("User service is unavailable"),
+    RESTAURANT_NOT_FOUND("The requested restaurant does not exist"),
+    CATEGORY_NOT_FOUND("The requested category does not exist"),
+    DISH_NOT_FOUND("The requested dish does not exist"),
+    RESTAURANT_OWNER_REQUIRED("Only the restaurant owner can manage its dishes"),
+    AUTHENTICATED_USER_NOT_FOUND("Authenticated user not found"),
+    INVALID_AUTHENTICATED_USER_ID("Invalid authenticated user identifier"),
+    ACCESS_DENIED("The authenticated user does not have permission to perform this action"),
+    ACTIVE_ORDER_EXISTS("The customer already has an order in process"),
+    ORDER_ITEMS_REQUIRED("Order must contain at least one dish"),
+    INVALID_ORDER_QUANTITY("Dish quantity must be positive"),
+    DUPLICATED_ORDER_DISH("A dish cannot be repeated in the same order"),
+    INVALID_ORDER_DISH("All dishes must be active and belong to the selected restaurant"),
+    INVALID_PARAMETER_TYPE("Request parameter has an invalid format"),
+    EMPLOYEE_RESTAURANT_NOT_ASSIGNED("The authenticated employee is not assigned to a restaurant"),
+    ORDER_NOT_AVAILABLE_FOR_ASSIGNMENT("The order is not available for assignment"),
+    ORDER_NOT_AVAILABLE_TO_MARK_READY("The order is not available to be marked as ready"),
+    ORDER_NOT_AVAILABLE_FOR_DELIVERY("The order cannot be delivered with the supplied PIN"),
+    ORDER_CANNOT_BE_CANCELED("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse"),
+    CUSTOMER_CONTACT_UNAVAILABLE("Customer contact information is unavailable"),
+    MESSAGING_SERVICE_UNAVAILABLE("Messaging service is unavailable"),
+    TRACEABILITY_SERVICE_UNAVAILABLE("Traceability service is unavailable");
+
+    private final String message;
+}

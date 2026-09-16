@@ -1,8 +1,785 @@
 openapi: 3.1.0
 info:
   title: Food Court API
-  version: 0.0.1
-  description: Base técnica sin historias de usuario.
+  version: 1.0.0
+  description: Gestión de restaurantes de la plazoleta de comidas.
 servers:
   - url: /api/v1
-paths: {}
+security:
+  - bearerAuth: []
+paths:
+  /orders:
+    get:
+      operationId: getOrdersByStatus
+      summary: Listar pedidos por estado
+      description: Lista los pedidos del restaurante del empleado autenticado.
+      parameters:
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - PENDING
+              - IN_PREPARATION
+              - READY
+              - DELIVERED
+              - CANCELED
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Pedidos del restaurante filtrados por estado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderPage'
+        '400':
+          description: Estado o paginación inválidos
+        '401':
+          description: Token ausente, inválido o sin restaurante asociado
+        '403':
+          description: Se requiere rol EMPLOYEE
+    post:
+      operationId: createOrder
+      summary: Crear un pedido
+      description: Crea un pedido en estado pendiente con platos activos de un mismo restaurante.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '201':
+          description: Pedido creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseEnvelope'
+        '400':
+          description: Pedido inválido o el cliente ya tiene un pedido en proceso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere rol CUSTOMER
+        '404':
+          description: Restaurante inexistente
+        '503':
+          description: El servicio de trazabilidad no está disponible
+  /orders/{orderId}/assignment:
+    patch:
+      operationId: assignOrder
+      summary: Asignarse a un pedido
+      description: Asigna el empleado autenticado a un pedido pendiente de su restaurante y lo cambia a en preparación.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '200':
+          description: Pedido asignado y cambiado a en preparación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseEnvelope'
+        '400':
+          description: El pedido no está pendiente, ya fue asignado o pertenece a otro restaurante
+        '401':
+          description: Token ausente, inválido o sin restaurante asociado
+        '403':
+          description: Se requiere rol EMPLOYEE
+        '503':
+          description: El servicio de trazabilidad no está disponible
+  /orders/{orderId}/ready:
+    patch:
+      operationId: markOrderReady
+      summary: Marcar un pedido como listo
+      description: Cambia a listo un pedido en preparación asignado al empleado y envía al cliente el PIN de recogida por SMS.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '200':
+          description: Pedido listo y cliente notificado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseEnvelope'
+        '400':
+          description: El pedido no está en preparación, no está asignado al empleado o pertenece a otro restaurante
+        '401':
+          description: Token ausente, inválido o sin restaurante asociado
+        '403':
+          description: Se requiere rol EMPLOYEE
+        '503':
+          description: No fue posible consultar el contacto, enviar el SMS o registrar la trazabilidad
+  /orders/{orderId}/delivery:
+    patch:
+      operationId: deliverOrder
+      summary: Entregar un pedido
+      description: Cambia a entregado un pedido listo del empleado con el PIN dado.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderDeliveryRequest'
+      responses:
+        '200':
+          description: Pedido entregado y PIN invalidado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseEnvelope'
+        '400':
+          description: El pedido no está listo, no pertenece al empleado o el PIN no coincide
+        '401':
+          description: Token ausente, inválido o sin restaurante asociado
+        '403':
+          description: Se requiere rol EMPLOYEE
+        '503':
+          description: El servicio de trazabilidad no está disponible
+  /orders/{orderId}/cancellation:
+    patch:
+      operationId: cancelOrder
+      summary: Cancelar un pedido
+      description: Cancela un pedido unicamente en estado pendiente.
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '200':
+          description: Pedido cancelado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponseEnvelope'
+        '400':
+          description: Lo sentimos, tu pedido ya está en preparación y no puede cancelarse
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere rol CUSTOMER
+        '503':
+          description: El servicio de trazabilidad no está disponible
+  /restaurants:
+    get:
+      operationId: getRestaurants
+      summary: Listar restaurantes
+      description: Lista los restaurantes alfabéticamente y de forma paginada.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Restaurantes encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantSummaryPage'
+        '400':
+          description: Parámetros de paginación inválidos
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere rol CUSTOMER
+    post:
+      operationId: createRestaurant
+      summary: Crear un restaurante
+      description: Crea un restaurante asociado a un usuario con rol OWNER.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestaurantRequest'
+      responses:
+        '201':
+          description: Restaurante creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RestaurantResponseEnvelope'
+        '400':
+          description: Campos inválidos, NIT duplicado o usuario sin rol OWNER
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '503':
+          description: El microservicio de usuarios no está disponible
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere rol ADMIN
+  /restaurants/{restaurantId}/dishes:
+    get:
+      operationId: getDishes
+      summary: Listar los platos de un restaurante
+      description: Lista los platos activos de un restaurante con filtro por categoría.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: categoryId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+      responses:
+        '200':
+          description: Platos encontrados
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishSummaryPage'
+        '400':
+          description: Identificador o parámetros de paginación inválidos
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere rol CUSTOMER
+    post:
+      operationId: createDish
+      summary: Crear un plato
+      description: Crea un plato activo y lo asocia a un restaurante y una categoría existentes.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishRequest'
+      responses:
+        '201':
+          description: Plato creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishResponseEnvelope'
+        '400':
+          description: Campos inválidos, restaurante inexistente o categoría inexistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere ser propietario del restaurante
+  /restaurants/{restaurantId}/ownership:
+    get:
+      operationId: validateRestaurantOwnership
+      summary: Validar propiedad de un restaurante
+      description: Verifica que el restaurante pertenezca al propietario autenticado.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        '204':
+          description: El restaurante pertenece al propietario autenticado
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: El restaurante pertenece a otro propietario
+        '404':
+          description: El restaurante no existe
+  /restaurants/{restaurantId}/dishes/{dishId}:
+    patch:
+      operationId: updateDish
+      summary: Modificar un plato
+      description: Modifica el precio y la descripción de un plato que pertenece a un restaurante.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: dishId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishUpdateRequest'
+      responses:
+        '200':
+          description: Plato modificado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishResponseEnvelope'
+        '400':
+          description: Precio, descripción o identificadores inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '404':
+          description: El plato no existe en el restaurante
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere ser propietario del restaurante
+  /restaurants/{restaurantId}/dishes/{dishId}/status:
+    patch:
+      operationId: updateDishStatus
+      summary: Habilitar o deshabilitar un plato
+      description: Actualiza el estado de un plato perteneciente al restaurante del propietario autenticado.
+      parameters:
+        - name: restaurantId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+        - name: dishId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DishStatusRequest'
+      responses:
+        '200':
+          description: Estado del plato actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DishResponseEnvelope'
+        '400':
+          description: Estado o identificadores inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExceptionResponse'
+        '401':
+          description: Token ausente o inválido
+        '403':
+          description: Se requiere ser propietario del restaurante
+        '404':
+          description: El plato no existe en el restaurante
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    OrderItemRequest:
+      type: object
+      required:
+        - dishId
+        - quantity
+      properties:
+        dishId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 10
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+    OrderRequest:
+      type: object
+      required:
+        - restaurantId
+        - items
+      properties:
+        restaurantId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 5
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+    OrderDeliveryRequest:
+      type: object
+      required:
+        - securityPin
+      additionalProperties: false
+      properties:
+        securityPin:
+          type: string
+          pattern: '^\d{6}$'
+          example: '482913'
+    OrderResponse:
+      type: object
+      required:
+        - id
+        - customerId
+        - restaurantId
+        - status
+        - createdAt
+        - items
+      properties:
+        id:
+          type: integer
+          format: int64
+        customerId:
+          type: integer
+          format: int64
+        restaurantId:
+          type: integer
+          format: int64
+        assignedEmployeeId:
+          type: integer
+          format: int64
+          nullable: true
+        status:
+          type: string
+          enum:
+            - PENDING
+            - IN_PREPARATION
+            - READY
+            - DELIVERED
+            - CANCELED
+        createdAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+    OrderResponseEnvelope:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/OrderResponse'
+    OrderPage:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderResponse'
+        meta:
+          $ref: '#/components/schemas/PageMetadata'
+    RestaurantRequest:
+      type: object
+      required:
+        - name
+        - nit
+        - address
+        - phone
+        - urlLogo
+        - ownerId
+      properties:
+        name:
+          type: string
+          pattern: '^(?!\s*\d+\s*$).+'
+          example: Restaurante 123
+        nit:
+          type: string
+          pattern: '^\d+$'
+          example: '900123456'
+        address:
+          type: string
+          example: Local 15
+        phone:
+          type: string
+          maxLength: 13
+          pattern: '^\+?\d+$'
+          example: '+573005698325'
+        urlLogo:
+          type: string
+          example: https://cdn.example.com/logo.png
+        ownerId:
+          type: integer
+          format: int64
+          minimum: 1
+    RestaurantResponse:
+      allOf:
+        - $ref: '#/components/schemas/RestaurantRequest'
+        - type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+    RestaurantResponseEnvelope:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/RestaurantResponse'
+    RestaurantSummary:
+      type: object
+      required:
+        - name
+        - urlLogo
+      properties:
+        name:
+          type: string
+          example: El Corral
+        urlLogo:
+          type: string
+          example: https://cdn.example.com/logo.png
+    PageMetadata:
+      type: object
+      required:
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        page:
+          type: integer
+          example: 0
+        size:
+          type: integer
+          example: 10
+        totalElements:
+          type: integer
+          format: int64
+          example: 25
+        totalPages:
+          type: integer
+          example: 3
+    RestaurantSummaryPage:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RestaurantSummary'
+        meta:
+          $ref: '#/components/schemas/PageMetadata'
+    DishRequest:
+      type: object
+      required:
+        - name
+        - price
+        - description
+        - urlImage
+        - categoryId
+      properties:
+        name:
+          type: string
+          example: Hamburguesa especial
+        price:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 25000
+        description:
+          type: string
+          example: Carne, queso y vegetales
+        urlImage:
+          type: string
+          example: https://cdn.example.com/dish.png
+        categoryId:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 2
+    DishResponse:
+      allOf:
+        - $ref: '#/components/schemas/DishRequest'
+        - type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+            restaurantId:
+              type: integer
+              format: int64
+            active:
+              type: boolean
+              example: true
+    DishResponseEnvelope:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/DishResponse'
+    DishSummary:
+      type: object
+      required:
+        - id
+        - name
+        - price
+        - description
+        - urlImage
+        - categoryId
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          example: Hamburguesa especial
+        price:
+          type: integer
+          format: int64
+          example: 25000
+        description:
+          type: string
+          example: Carne, queso y vegetales
+        urlImage:
+          type: string
+          example: https://cdn.example.com/dish.png
+        categoryId:
+          type: integer
+          format: int64
+          example: 2
+    DishSummaryPage:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/DishSummary'
+        meta:
+          $ref: '#/components/schemas/PageMetadata'
+    DishUpdateRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - price
+        - description
+      properties:
+        price:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 30000
+        description:
+          type: string
+          minLength: 1
+          example: Carne, queso, vegetales y salsa de la casa
+    DishStatusRequest:
+      type: object
+      additionalProperties: false
+      required:
+        - active
+      properties:
+        active:
+          type: boolean
+          example: false
+    ExceptionResponse:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: string

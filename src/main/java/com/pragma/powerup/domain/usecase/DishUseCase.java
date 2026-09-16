@@ -1,0 +1,75 @@
+package com.pragma.powerup.domain.usecase;
+
+import com.pragma.powerup.domain.api.IDishServicePort;
+import com.pragma.powerup.domain.exception.AuthorizationException;
+import com.pragma.powerup.domain.exception.ExceptionMessages;
+import com.pragma.powerup.domain.exception.NotFoundException;
+import com.pragma.powerup.domain.exception.ValidationException;
+import com.pragma.powerup.domain.model.Dish;
+import com.pragma.powerup.domain.model.PageResult;
+import com.pragma.powerup.domain.model.Restaurant;
+import com.pragma.powerup.domain.spi.ICategoryPersistencePort;
+import com.pragma.powerup.domain.spi.IDishPersistencePort;
+import com.pragma.powerup.domain.spi.ILoggedUserPort;
+import com.pragma.powerup.domain.spi.IRestaurantPersistencePort;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+public class DishUseCase implements IDishServicePort {
+    private final IDishPersistencePort dishPersistencePort;
+    private final IRestaurantPersistencePort restaurantPersistencePort;
+    private final ICategoryPersistencePort categoryPersistencePort;
+    private final ILoggedUserPort loggedUserPort;
+
+    @Override
+    public Dish createDish(Dish dish) {
+        validateRestaurantOwner(dish.getRestaurantId());
+        validateCategory(dish.getCategoryId());
+        dish.setActive(true);
+        return dishPersistencePort.save(dish);
+    }
+
+    @Override
+    public Dish updateDish(Long restaurantId, Long dishId, Long price, String description) {
+        Dish dish = findOwnedDish(restaurantId, dishId);
+        dish.setPrice(price);
+        dish.setDescription(description);
+        return dishPersistencePort.save(dish);
+    }
+
+    @Override
+    public Dish updateDishStatus(Long restaurantId, Long dishId, boolean active) {
+        Dish dish = findOwnedDish(restaurantId, dishId);
+        dish.setActive(active);
+        return dishPersistencePort.save(dish);
+    }
+
+    @Override
+    public PageResult<Dish> getDishes(Long restaurantId, Long categoryId, int page, int size) {
+        return dishPersistencePort.findActiveByRestaurant(restaurantId, categoryId, page, size);
+    }
+
+    private void validateRestaurantOwner(Long restaurantId) {
+        Restaurant restaurant = restaurantPersistencePort.findById(restaurantId)
+                .orElseThrow(() -> new NotFoundException(ExceptionMessages.RESTAURANT_NOT_FOUND.getMessage()));
+        if (!loggedUserPort.getUserId().equals(restaurant.getOwnerId())) {
+            throw new AuthorizationException(ExceptionMessages.RESTAURANT_OWNER_REQUIRED.getMessage());
+        }
+    }
+
+    private void validateCategory(Long categoryId) {
+        if (!categoryPersistencePort.existsById(categoryId)) {
+            throw new ValidationException(ExceptionMessages.CATEGORY_NOT_FOUND.getMessage());
+        }
+    }
+
+    private Dish findOwnedDish(Long restaurantId, Long dishId) {
+        validateRestaurantOwner(restaurantId);
+        Dish dish = dishPersistencePort.findById(dishId)
+                .orElseThrow(() -> new NotFoundException(ExceptionMessages.DISH_NOT_FOUND.getMessage()));
+        if (!restaurantId.equals(dish.getRestaurantId())) {
+            throw new NotFoundException(ExceptionMessages.DISH_NOT_FOUND.getMessage());
+        }
+        return dish;
+    }
+}
